@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
 import requests
+from datetime import datetime, timedelta
 
+### METHODS
 def dataframe_from_request(url):
     '''
     Returns pandas dataframe from API request's JSON format
@@ -36,7 +38,7 @@ def clean_dataframe(df):
 
     # string date column
     df['dateString'] = df['date'].dt.strftime('%Y-%m-%d')
-    
+
     # number of days since 1st case in US
     EARLIEST_DATE = min(df['date'])
     df['daysSinceCase1'] = df['date'].apply(lambda x: (x - EARLIEST_DATE).days)
@@ -45,3 +47,17 @@ def clean_dataframe(df):
     df.fillna(0, inplace=True)
 
     return df
+
+### VARIABLES
+# metadata
+URL = "https://covidtracking.com/api/v1/states/daily.json"
+DF = dataframe_from_request(URL)
+DF = clean_dataframe(DF)
+
+# date variables
+LATEST_DATE = max(DF['date'])
+EARLIEST_DATE = min(DF['date'])
+DELTA_DAYS = (LATEST_DATE - EARLIEST_DATE).days
+
+# misc variables
+NEWLINE = '\n'
