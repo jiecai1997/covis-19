@@ -136,7 +136,7 @@ def update_maps(days_since_d1, metric):
         # static
         locationmode = 'USA-states',
         scope = 'usa',
-        height = 520,
+        height = 525,
         animation_frame = 'Date',
         animation_group = metric,
         color_continuous_scale = 'Inferno_r'
