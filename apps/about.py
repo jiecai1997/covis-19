@@ -8,27 +8,17 @@ colors = {
 }
 
 layout = html.Div(
+    className = 'container',
     children=[
-
-        html.Nav(
+        html.Ul(
+            className = 'topnav',
             children = [
-                dcc.Link('Home', href='/'),
-                dcc.Link('About', href='#'),
-                html.A('Github', href='https://github.com/jiecai1997/covis19')
-            ],
-            style = {
-                'textAlign': 'center',
-                'color': colors['text']
-            }
+                html.Li(html.A(html.B('COVIS19'), href='/')),
+                html.Li(html.A('About', className = 'active', href='#')),
+                html.Li(className = 'right', children=[html.A('Github', href='https://github.com/jiecai1997/covis19')])
+            ]
         ),
-
-        html.H1(
-            children = 'about',
-            style = {
-                'textAlign': 'center',
-                'color': colors['text']
-            }
-        ),
-        
+        html.Br(),
+        html.H1(html.B('COVIS19 = COVID19 + DATAVIS')) 
     ]
 )

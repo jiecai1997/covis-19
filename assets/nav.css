@@ -1,0 +1,64 @@
+ul.topnav {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border-bottom: 1px solid #e7e7e7;
+
+  }
+  
+ul.topnav li {float: left;}
+
+ul.topnav li a {
+    display: block;
+    color: #999999;
+    text-align: center;
+    padding: 6px 16px;
+    text-decoration: none;
+}
+
+ul.topnav li a:hover:not(.active) {color: #222222;}
+
+ul.topnav li a.active {color: #222222;}
+
+ul.topnav li.right {float: right;}
+  
+@media screen and (max-width: 600px) {
+    ul.topnav li.right, 
+    ul.topnav li {float: none;}
+}
+
+@media (max-width: 600px) {
+    .container {
+      width: 100%;
+      padding: 0; }
+  }
+
+/* For devices larger than 550px */
+@media (min-width: 600px) {
+    .container {
+      width: 80%; 
+      max-width: 1200px;
+      min-width: 600px;
+    }
+    .column,
+    .columns {
+      margin-left: 4%; }
+    .column:first-child,
+    .columns:first-child {
+      margin-left: 0; }
+  
+    .one.column,
+    .one.columns                    { width: 4.66666666667%; }
+    .two.columns                    { width: 13.3333333333%; }
+    .three.columns                  { width: 22%;            }
+    .four.columns                   { width: 30.6666666667%; }
+    .five.columns                   { width: 39.3333333333%; }
+    .six.columns                    { width: 48%;            }
+    .seven.columns                  { width: 56.6666666667%; }
+    .eight.columns                  { width: 65.3333333333%; }
+    .nine.columns                   { width: 74.0%;          }
+    .ten.columns                    { width: 82.6666666667%; }
+    .eleven.columns                 { width: 91.3333333333%; }
+    .twelve.columns                 { width: 100%; margin-left: 0;}
+}
