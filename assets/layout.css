@@ -38,7 +38,7 @@ ul.topnav li.right {float: right;}
 @media (min-width: 600px) {
     .container {
       width: 80%; 
-      max-width: 1200px;
+      max-width: 1400px;
       min-width: 600px;
     }
     .column,
