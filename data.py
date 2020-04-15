@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import requests
 from datetime import datetime, timedelta
-from const import *
+from const import COLS_RENAME#, COLS_REORDER
 
 ### METHODS
 def dataframe_from_request(url):
@@ -22,7 +22,7 @@ def dataframe_from_request(url):
 
     return df
 
-def clean_dataframe(df):
+def clean_dataframe(df, level):
     '''
     Cleans dataframe:
         - create columns for date variables in datettime and string format 
@@ -52,23 +52,27 @@ def clean_dataframe(df):
 
     # rename columns to human readable format
     df.rename(columns=COLS_RENAME, inplace=True)
+    if level == 'state':
+        df.rename(columns={'state': 'State',}, inplace=True)
 
     # reorder columns for display
-    df = df[COLS_REORDER]
+    #df = df[COLS_REORDER]
 
     return df
 
 ### POST-CALCULATION VARIABLES
-# metadata
-URL = "https://covidtracking.com/api/v1/states/daily.json"
-DF = dataframe_from_request(URL)
-DF = clean_dataframe(DF)
+# state data
+URL_STATES_API = 'https://covidtracking.com/api/v1/states/daily.json'
+DF_STATES = dataframe_from_request(URL_STATES_API)
+DF_STATES = clean_dataframe(DF_STATES, 'state')
+
+# federal data
+URL_FEDERAL_API = 'https://covidtracking.com/api/us/daily'
+DF_FEDERAL = dataframe_from_request(URL_FEDERAL_API)
+DF_FEDERAL = clean_dataframe(DF_FEDERAL, 'federal')
 
 # date variables
-LATEST_DATE = max(DF['date'])
-EARLIEST_DATE = min(DF['date'])
+LATEST_DATE = min(max(DF_STATES['date']), max(DF_FEDERAL['date']))
+EARLIEST_DATE = max(min(DF_STATES['date']), min(DF_FEDERAL['date']))
 DELTA_DAYS = (LATEST_DATE - EARLIEST_DATE).days
-
-# misc variables
-NEWLINE = '\n'
 

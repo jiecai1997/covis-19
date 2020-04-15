@@ -2,7 +2,6 @@
 
 # renaming columns in df
 COLS_RENAME = {
-    'state': 'State',
     # positive
     'positive': 'Positive, Cumulative',
     'positiveIncrease': 'Positive, Daily Increase',
@@ -20,12 +19,12 @@ COLS_RENAME = {
     # hospitalized
     'hospitalized': 'Hospitalized, Cumulative',
     'hospitalizedIncrease': 'Hospitalized, Daily Increase',
-    # in ICU
-    'inIcuCumulative': 'In ICU, Cumulative',
-    'inIcuCurrently': 'In ICU, Currently',
-    # on ventilator
-    'onVentilatorCumulative': 'On Ventilator, Cumulative',
-    'onVentilatorCurrently': 'On Ventilator, Currently'
+    # in ICU - cumulative and current are swapped in tracker API
+    'inIcuCumulative': 'In ICU, Currently',
+    'inIcuCurrently': 'In ICU, Cumulative',
+    # on ventilator - cumulative and current are swapped in tracker API
+    'onVentilatorCumulative': 'On Ventilator, Currently',
+    'onVentilatorCurrently': 'On Ventilator, Cumulative',
 }
 COLS_REORDER = ['Date'] + list(COLS_RENAME.values()) + ['date', 'Days Since First Case']
 
