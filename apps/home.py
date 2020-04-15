@@ -46,78 +46,174 @@ layout = html.Div(
         ),
 
         html.Br(),
+
         #html.H1(html.B('COVIS19 = COVID19 + DATAVIS')),
         #html.P(f"Last Updated {LATEST_DATE.strftime('%Y/%m/%d')}"),
 
         html.H5(children = '💊Overall Statistics'),
+        html.P(children = [html.A('Source', href = 'https://covidtracking.com/api'),', US only',]),
         html.Div(
             className = 'row',
             children = [
                 html.Div(
                     className = 'four columns',
                     children = [
-                        html.H2(html.Strong(id = 'stats-today-info-positive')),
-                        html.Strong('Positive, Cumulative'),
-                        html.P(id = 'stats-increase-info-positive')
+                        html.Div(
+                            className = 'row',
+                            children = [
+                                html.Div(
+                                    className = 'six columns',
+                                    children = [html.H1(children = [html.Strong(id = 'stats-today-info-positive')])]
+                                ),
+                                html.Div(
+                                    className = 'six columns',
+                                    children = [
+                                        html.Strong('Positive, Cumulative'),
+                                        html.P(id = 'stats-increase-info-positive')
+                                    ]
+                                )
+                            ]
+                        ),
+                        dcc.Graph(id = 'graph-positive')
                     ]
                 ),
                 html.Div(
                     className = 'four columns',
                     children = [
-                        html.H2(html.Strong(id = 'stats-today-info-deaths')),
-                        html.Strong('Deaths, Cumulative'),
-                        html.P(id = 'stats-increase-info-deaths')
+                        html.Div(
+                            className = 'row',
+                            children = [
+                                html.Div(
+                                    className = 'six columns',
+                                    children = [html.H1(children = [html.Strong(id = 'stats-today-info-deaths')])]
+                                ),
+                                html.Div(
+                                    className = 'six columns',
+                                    children = [
+                                        html.Strong('Deaths, Cumulative'),
+                                        html.P(id = 'stats-increase-info-deaths')
+                                    ]
+                                )
+                            ]
+                        ),
+                        dcc.Graph(id = 'graph-deaths')
                     ]
                 ),
                 html.Div(
                     className = 'four columns',
                     children = [
-                        html.H2(html.Strong(id = 'stats-today-info-recovered')),
-                        html.Strong('Recoverd, Cumulative'),
-                        html.P(id = 'stats-increase-info-recovered')
+                        html.Div(
+                            className = 'row',
+                            children = [
+                                html.Div(
+                                    className = 'six columns',
+                                    children = [html.H1(children = [html.Strong(id = 'stats-today-info-recovered')])]
+                                ),
+                                html.Div(
+                                    className = 'six columns',
+                                    children = [
+                                        html.Strong('Recovered, Cumulative'),
+                                        html.P(id = 'stats-increase-info-recovered')
+                                    ]
+                                )
+                            ]
+                        ),
+                        dcc.Graph(id = 'graph-recovered')
                     ]
-                )
+                )  
             ]
         ),
+
         html.Hr(),
+
+        # metric & date
+
         html.Div(
             className = 'row',
-            children = [   
+            children = [
                 html.Div(
-                    className = 'six columns',
+                    className = 'four columns',
                     children = [
-                        html.H5(children = 'Metric'),
-                        dcc.Dropdown(
-                            id = 'metric-select',
-                            options = METRIC_SELECT_OPTIONS,
-                            value = 'Positive, Cumulative'
-                        ),  
-                        html.Br(),
-                        html.Strong(id = 'metric-name-output'),
-                        html.P(id = 'metric-info-output'),            
+                        html.H5('Specific Statistics'),
+                        html.P(children = [
+                            'Use the ', html.Strong('Date'), ' and ', html.Strong('Metric'),
+                            ' toggles to zoom in on specific infomation up to a certain day. \
+                                Date will also affect the range of overall statistics above.'
+                            ]
+                        )
                     ]
                 ),
                 html.Div(
-                    className = 'six columns',
+                    className = 'four columns',
                     children = [
-                        html.H5(children = 'Date'),
+                        html.H5('Date'),
+                        html.Strong(id = 'date-output'),
+                        html.P(id = 'days-since-d1-output'),
                         dcc.Slider(
                             id = 'date-slider',
                             min = 0,
                             max = DELTA_DAYS,
                             marks = {i:(EARLIEST_DATE + timedelta(days=i)).strftime('%Y/%m/%d') \
-                                for i in range(int(DELTA_DAYS/8), DELTA_DAYS-int(DELTA_DAYS/8), int(DELTA_DAYS/4))},
+                                for i in range(int(DELTA_DAYS/4), DELTA_DAYS-int(DELTA_DAYS/4), int(DELTA_DAYS/2))},
                             value = DELTA_DAYS
-                        ),
+                        )
+                    ]
+                ),
+                html.Div(
+                    className = 'four columns',
+                    children = [
+                        html.H5('Metric'),
+                        html.Strong(id = 'metric-name-output'),
+                        html.P(id = 'metric-info-output'), 
+                        dcc.Dropdown(
+                            id = 'metric-select',
+                            options = METRIC_SELECT_OPTIONS,
+                            value = 'Positive, Daily Increase'
+                        )
+                    ]
+                )
+            ]
+        ),
+
+        # metric graph & map
+
+        html.Div(
+            className = 'row',
+            children = [   
+                html.Div(
+                    className = 'eight columns',
+                    children = [dcc.Graph(id = 'map-interactive')]
+                ),
+                html.Div(
+                    className = 'four columns',
+                    children = [
                         html.Br(),
-                        html.Strong(id = 'date-output'),
-                        html.P(id = 'days-since-d1-output'),
+                        html.Br(),
+                        html.Br(),
+                        html.Div(
+                            className = 'row',
+                            children = [
+                                html.Div(
+                                    className = 'six columns',
+                                    children = html.H1(html.Strong(id = 'metric-today-info'))
+                                ),
+                                html.Div(
+                                    className = 'six columns',
+                                    children = [
+                                        html.Strong(id = 'metric-info'),
+                                        html.P(id = 'metric-increase-info')
+                                    ]
+                                )
+                            ]
+                        ),
+                        dcc.Graph(id = 'graph-metric')
                     ]
                 )
             ]
         ),
         html.Hr(),
-        dcc.Graph(id = 'overall-stats-graph'),
+        '''
+        # interactive map
         html.Div(
             className = 'row',
             children = [
@@ -137,6 +233,7 @@ layout = html.Div(
                 )                
             ]
         )
+        '''
         #generate_table(DF)
     ]
 )
@@ -144,10 +241,7 @@ layout = html.Div(
 ### APP CALLBACKS
 # update map
 @app.callback(
-    [
-        Output('map-interactive', 'figure'),
-        Output('map-time-lapse', 'figure')
-    ],
+    Output('map-interactive', 'figure'),
     [
         Input('date-slider', 'value'),
         Input('metric-select', 'value')
@@ -168,10 +262,8 @@ def update_maps(days_since_d1, metric):
         locationmode = 'USA-states',
         scope = 'usa',
         color_continuous_scale = 'Oranges',
-        height = 450
     )
-    map_interactive.update_layout(showlegend=False)
-
+    '''
      # map with animation
     map_time_lapse = px.choropleth(
         #DF[DF['date'] == EARLIEST_DATE + timedelta(days=i)],
@@ -190,8 +282,12 @@ def update_maps(days_since_d1, metric):
         animation_group = metric,
         color_continuous_scale = 'Oranges'
     )
-    map_time_lapse.update_layout(showlegend=False)
-    return map_interactive, map_time_lapse
+    '''
+
+    #map_time_lapse.update_layout(showlegend=False)
+    map_interactive.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+
+    return map_interactive
 
 # update date display
 @app.callback(
@@ -223,10 +319,13 @@ def update_metric_display(metric):
     [
         Output('stats-today-info-positive', 'children'),
         Output('stats-increase-info-positive', 'children'),
+        Output('graph-positive', 'figure'),
         Output('stats-today-info-deaths', 'children'),
         Output('stats-increase-info-deaths', 'children'),
+        Output('graph-deaths', 'figure'),
         Output('stats-today-info-recovered', 'children'),
         Output('stats-increase-info-recovered', 'children'),
+        Output('graph-recovered', 'figure')
     ],
     [Input('date-slider', 'value')]
 )
@@ -256,23 +355,71 @@ def update_overall_stats_display(days_since_d1):
     perc_diff_deaths = (today_info_deaths / yesterday_info_deaths - 1) if yesterday_info_deaths != 0 else 0
     perc_diff_recovered = (today_info_recovered / yesterday_info_recovered - 1) if yesterday_info_recovered != 0 else 0
 
+    # plus or minus
+    plus_positive = '+' if abs_diff_positive >=0 else ''
+    plus_deaths = '+' if abs_diff_deaths >= 0 else ''
+    plus_recovered = '+' if abs_diff_recovered >= 0 else ''
+
     # format into strings for print
     today_info_positive = f'{int(today_info_positive):,}'
     today_info_deaths = f'{int(today_info_deaths):,}'
     today_info_recovered = f'{int(today_info_recovered):,}'
-    increase_info_positive = f'{int(abs_diff_positive):,}, {perc_diff_positive:.1%}'
-    increase_info_deaths = f'{int(abs_diff_deaths):,}, {perc_diff_deaths:.1%}'
-    increase_info_recovered = f'{int(abs_diff_recovered):,}, {perc_diff_recovered:.1%}'
+    increase_info_positive = f'{plus_positive}{int(abs_diff_positive):,}, {perc_diff_positive:.1%}'
+    increase_info_deaths = f'{plus_deaths}{int(abs_diff_deaths):,}, {perc_diff_deaths:.1%}'
+    increase_info_recovered = f'{plus_recovered}{int(abs_diff_recovered):,}, {perc_diff_recovered:.1%}'
 
-    return today_info_positive, increase_info_positive, \
-        today_info_deaths, increase_info_deaths, \
-        today_info_recovered, increase_info_recovered
+    # graphs
+    fig_positive = px.line(
+        DF[DF['Days Since First Case'] <= days_since_d1].groupby('Date')['Positive, Cumulative'].agg('sum').reset_index(),
+        x = 'Date',
+        y = 'Positive, Cumulative',
+        template='plotly_white',
+        color_discrete_map={'Positive, Cumulative':'Orange'},
+        width=400,
+        height=250
+    )
 
-# TODO update metric specific display 
+    fig_deaths = px.line(
+        DF[DF['Days Since First Case'] <= days_since_d1].groupby('Date')['Deaths, Cumulative'].agg('sum').reset_index(),
+        x = 'Date',
+        y = 'Deaths, Cumulative',
+        template='plotly_white',
+        color_discrete_map={'Deaths, Cumulative':'Orange'},
+        width=400,
+        height=250
+    )
+
+    fig_recovered = px.line(
+        DF[DF['Days Since First Case'] <= days_since_d1].groupby('Date')['Recovered, Cumulative'].agg('sum').reset_index(),
+        x = 'Date',
+        y = 'Recovered, Cumulative',
+        template='plotly_white',
+        color_discrete_map={'Recovered, Cumulative':'Orange'},
+        width=400,
+        height=250
+    )  
+
+    fig_positive.update_xaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
+    fig_positive.update_yaxes(showticklabels=False, visible=False, tickfont=dict(size=1))
+    fig_deaths.update_xaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
+    fig_deaths.update_yaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
+    fig_recovered.update_xaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
+    fig_recovered.update_yaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
+    fig_positive.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+    fig_deaths.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+    fig_recovered.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+
+    return today_info_positive, increase_info_positive, fig_positive, \
+        today_info_deaths, increase_info_deaths, fig_deaths, \
+        today_info_recovered, increase_info_recovered, fig_recovered
+
+# update metric specific display 
 @app.callback(
     [
-        Output('stats-today-info', 'children'),
-        Output('stats-increase-info', 'children'),
+        Output('graph-metric', 'figure'),
+        Output('metric-today-info', 'children'),
+        Output('metric-info', 'children'),
+        Output('metric-increase-info', 'children'),
     ],
     [
         Input('metric-select', 'value'),
@@ -280,35 +427,32 @@ def update_overall_stats_display(days_since_d1):
     ]
 )
 def update_metric_specific_display(metric, days_since_d1):
-    '''
-    df_overall = DF[DF['Days Since First Case'] < days_since_d1].groupby('Date')[metric].agg('sum').reset_index()
-    fig = px.bar(
-        df_overall, 
+ 
+    fig = px.line(
+        DF[DF['Days Since First Case'] <= days_since_d1].groupby('Date')[metric].agg('sum').reset_index(), 
         x = 'Date', 
         y = metric, 
         template = 'plotly_white',
-        color_discrete_map = {metric: 'Orange'}
+        color_discrete_map = {metric: 'Orange'},
+        width=400,
+        height=250
     )
-    '''
+    fig.update_xaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
+    fig.update_yaxes(showticklabels=False, visible=False, tickfont=dict(size=1))
+    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
 
     # calculate information
-    today_info = sum(DF[DF['Days Since First Case'] == days_since_d1][metric])
-    yesterday_info = sum(DF[DF['Days Since First Case'] == max((days_since_d1 -1), 0)][metric])
-    abs_increase = today_info - yesterday_info
-    if yesterday_info == 0:
-        perc_increase = None
-    else:
-        perc_increase = round((today_info / yesterday_info - 1)*100, 1)
-    plus = None
-    if abs_increase >= 0 and perc_increase >= 0:
-        plus = '+'
+    today_info_metric = sum(DF[DF['Days Since First Case'] == days_since_d1][metric])
+    yesterday_info_metric = sum(DF[DF['Days Since First Case'] == (days_since_d1 -1)][metric])
+    yesterday_info_metric = yesterday_info_metric if yesterday_info_metric else 0
+
+    abs_diff_metric = today_info_metric - yesterday_info_metric
+    perc_diff_metric = (today_info_metric / yesterday_info_metric - 1) if yesterday_info_metric != 0 else 0
+
+    plus_metric = '+' if abs_diff_metric >=0 else ''
 
     # format for string printing
-    today_info = f'{int(today_info):,}'
-    if days_since_d1 == 0:
-        increase_info = '-'
-    if plus is None:
-        increase_info = f'{int(abs_increase):,}, {perc_increase}%'
-    else:
-        increase_info = f'{plus}{int(abs_increase):,}, {perc_increase}%'
-    return today_info, increase_info
+    today_info_metric = f'{int(today_info_metric):,}'
+    increase_info_metric = f'{plus_metric}{int(abs_diff_metric):,}, {perc_diff_metric:.1%}'
+
+    return fig, today_info_metric, metric, increase_info_metric

@@ -22,6 +22,28 @@ ul.topnav li a:hover:not(.active) {color: #222222;}
 ul.topnav li a.active {color: #222222;}
 
 ul.topnav li.right {float: right;}
+
+a {
+  color: #555555;
+}
+
+.rc-slider-track {
+  background-color: #999999;
+}
+
+.rc-slider-dot-active {  
+  border-color: #999999;
+  border: solid 2px #999999;
+}
+
+.rc-slider-handle {
+  background-color: #ffffff;
+  border: solid 2px #999999;
+}
+
+.rc.slider-handle-active:active {
+  border-color: #999999;
+}
   
 @media screen and (max-width: 600px) {
     ul.topnav li.right, 
@@ -37,8 +59,8 @@ ul.topnav li.right {float: right;}
 /* For devices larger than 550px */
 @media (min-width: 600px) {
     .container {
-      width: 80%; 
-      max-width: 1400px;
+      width: 95%; 
+      max-width: 1500px;
       min-width: 600px;
     }
     .column,
