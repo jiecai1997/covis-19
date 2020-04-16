@@ -60,7 +60,9 @@ layout = html.Div(
             html.A('Source', href = 'https://covidtracking.com/api'),
             ' updated ', LATEST_DATE.strftime('%Y/%m/%d'),
             ', US only']),
+    
         html.Br(),
+
         html.Div(
             className = 'row',
             children = [
@@ -126,6 +128,7 @@ layout = html.Div(
                             value = DELTA_DAYS
                         ),
                         html.Br(),
+                        html.Br(),
                         # metric
                         html.H5('Metric'),
                         html.Strong(id = 'metric-name-output'),
@@ -161,33 +164,101 @@ layout = html.Div(
                 ),
                 html.Div(
                     className = 'eight columns',
-                    children = [dcc.Graph(id = 'map-interactive')]
+                    children = [dcc.Graph(id = 'states-metric-map'),]
                 )
             ]
         ),
         html.Hr(),
-        '''
-        # interactive map
+
+        dcc.Graph(id = 'states-metric-graph'),
+
+        html.Br(),
+        html.Br(),
+
         html.Div(
             className = 'row',
             children = [
                 html.Div(
-                    className = 'six columns',
+                    className = 'two columns',
                     children = [
-                        html.H5(children = 'Interactive Map'),
-                        dcc.Graph(id = 'map-interactive')
+                        html.H3(html.Strong(id = 'AK-metric-info-today')),
+                        html.Strong('AK, Alaska'),
+                        html.P(id = 'AK-metric-info-increase')
                     ]
                 ),
                 html.Div(
-                    className = 'six columns',
+                    className = 'two columns',
+                    children = dcc.Graph(id = 'AK-metric-graph')
+                ),
+                html.Div(
+                    className = 'two columns',
                     children = [
-                        html.H5(children = 'Time Lapse Map'),
-                        dcc.Graph(id = 'map-time-lapse')
+                        html.H3(html.Strong(id = 'AL-metric-info-today')),
+                        html.Strong('AL, Alabama'),
+                        html.P(id = 'AL-metric-info-increase')
                     ]
-                )                
+                ),
+                html.Div(
+                    className = 'two columns',
+                    children = dcc.Graph(id = 'AL-metric-graph')
+                ),
+                html.Div(
+                    className = 'two columns',
+                    children = [
+                        html.H3(html.Strong(id = 'AR-metric-info-today')),
+                        html.Strong('AR, Arkansas'),
+                        html.P(id = 'AR-metric-info-increase')
+                    ]
+                ),
+                html.Div(
+                    className = 'two columns',
+                    children = dcc.Graph(id = 'AR-metric-graph')
+                )
             ]
-        )
-        '''
+        ),    
+
+        html.Div(
+            className = 'row',
+            children = [
+                html.Div(
+                    className = 'two columns',
+                    children = [
+                        html.H3(html.Strong(id = 'AZ-metric-info-today')),
+                        html.Strong('AZ, Arizona'),
+                        html.P(id = 'AZ-metric-info-increase')
+                    ]
+                ),
+                html.Div(
+                    className = 'two columns',
+                    children = dcc.Graph(id = 'AZ-metric-graph')
+                ),
+                html.Div(
+                    className = 'two columns',
+                    children = [
+                        html.H3(html.Strong(id = 'CA-metric-info-today')),
+                        html.Strong('CA, California'),
+                        html.P(id = 'CA-metric-info-increase')
+                    ]
+                ),
+                html.Div(
+                    className = 'two columns',
+                    children = dcc.Graph(id = 'CA-metric-graph')
+                ),
+                html.Div(
+                    className = 'two columns',
+                    children = [
+                        html.H3(html.Strong(id = 'CO-metric-info-today')),
+                        html.Strong('CO, Colorado'),
+                        html.P(id = 'CO-metric-info-increase')
+                    ]
+                ),
+                html.Div(
+                    className = 'two columns',
+                    children = dcc.Graph(id = 'CO-metric-graph')
+                )
+            ]
+        ),
+
         #generate_table(DF)
     ]
 )
@@ -195,16 +266,19 @@ layout = html.Div(
 ### APP CALLBACKS
 # update map
 @app.callback(
-    Output('map-interactive', 'figure'),
+    [
+        Output('states-metric-map', 'figure'),
+        Output('states-metric-graph', 'figure')
+    ],
     [
         Input('date-slider', 'value'),
         Input('metric-select', 'value')
     ]
 )
-def update_maps(days_since_d1, metric):
+def update_metric_graphs(days_since_d1, metric):
 
     # map without animation
-    map_interactive = px.choropleth(
+    map_graph = px.choropleth(
         DF_STATES[DF_STATES['date'] == EARLIEST_DATE + timedelta(days=days_since_d1)],
 
         # dynamic
@@ -215,34 +289,30 @@ def update_maps(days_since_d1, metric):
         # static
         locationmode = 'USA-states',
         scope = 'usa',
-        color_continuous_scale = 'Oranges'
+        color_continuous_scale = 'Oranges',
+        labels = {metric: ''}
     )
-    '''
-     # map with animation
-    map_time_lapse = px.choropleth(
-        #DF[DF['date'] == EARLIEST_DATE + timedelta(days=i)],
-        DF.sort_values(by=['date']),
 
-        # dynamic
-        color = metric,
-        locations = 'State',
-        range_color = (0, max(DF[metric])),
-
-        # static
-        locationmode = 'USA-states',
-        scope = 'usa',
-        height = 525,
-        animation_frame = 'Date',
-        animation_group = metric,
-        color_continuous_scale = 'Oranges'
+    line_graph = px.line(
+        DF_STATES[DF_STATES['date'] <= EARLIEST_DATE + timedelta(days=days_since_d1)],
+        x = 'Date',
+        y = metric,
+        color = 'State',
+        template = 'plotly_white',
+        color_discrete_sequence= px.colors.sequential.Oranges,
+        labels = {'State': ''},
+        height = 500
     )
-    '''
 
     #map_time_lapse.update_layout(showlegend=False)
-    map_interactive.update_layout(legend_title=''),
-    map_interactive.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+    map_graph.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+    line_graph.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+    line_graph.update_xaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
+    line_graph.update_yaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
+    map_graph.update_layout(legend_orientation='h')
+    line_graph.update_layout(legend_orientation='h')
 
-    return map_interactive
+    return map_graph, line_graph
 
 # update date display
 @app.callback(
@@ -431,8 +501,132 @@ def update_metric_graph(metric, days_since_d1):
         #width=400,
         height=100
     )
+
     fig.update_xaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
     fig.update_yaxes(showticklabels=False, visible=False, tickfont=dict(size=1))
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
 
     return fig
+
+# states specific function
+### get numbers
+def update_info(state, metric, days_since_d1):
+    # calculate basic information
+    today_info = sum(DF_STATES[(DF_STATES['State'] == state) & (DF_STATES['Days Since First Case'] == days_since_d1)][metric])
+    yesterday_info = sum(DF_STATES[(DF_STATES['State'] == state) & (DF_STATES['Days Since First Case'] == (days_since_d1-1))][metric])
+    yesterday_info = yesterday_info if yesterday_info else 0
+
+    # calculate difference information
+    abs_diff = today_info - yesterday_info
+    perc_diff = (today_info / yesterday_info - 1) if yesterday_info != 0 else 0
+    plus = '+' if abs_diff >=0 else ''
+
+    # format for string printing
+    today_info = f'{int(today_info):,}'
+    increase_info = f'{plus}{int(abs_diff):,}, {perc_diff:.1%}'
+
+    return today_info, increase_info
+
+### get graph
+def update_graph(state, metric, days_since_d1):
+    # make figure
+    fig = px.line(
+            DF_STATES[(DF_STATES['State'] == state) & (DF_STATES['Days Since First Case'] <= days_since_d1)][['Date', metric]], 
+            x = 'Date',
+            y = metric, 
+            template = 'plotly_white',
+            color_discrete_map = {metric: 'Orange'},
+            height=100
+    )
+    # edit display
+    fig.update_xaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
+    fig.update_yaxes(showticklabels=False, visible=False, tickfont=dict(size=1))
+    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+
+    return fig
+
+
+# states specific info
+### AK
+@app.callback(
+    [Output('AK-metric-info-today', 'children'), Output('AK-metric-info-increase', 'children')],
+    [Input('metric-select', 'value'), Input('date-slider', 'value')]
+)
+def update_AK_info(metric, days_since_d1):
+    return update_info('AK', metric, days_since_d1)
+@app.callback(
+    Output('AK-metric-graph', 'figure'),
+    [Input('metric-select', 'value'), Input('date-slider', 'value')]
+)
+def update_AK_graph(metric, days_since_d1):
+    return update_graph('AK', metric, days_since_d1)
+
+### AL
+@app.callback(
+    [Output('AL-metric-info-today', 'children'), Output('AL-metric-info-increase', 'children')],
+    [Input('metric-select', 'value'), Input('date-slider', 'value')]
+)
+def update_AL_info(metric, days_since_d1):
+    return update_info('AL', metric, days_since_d1)
+@app.callback(
+    Output('AL-metric-graph', 'figure'),
+    [Input('metric-select', 'value'), Input('date-slider', 'value')]
+)
+def update_AL_graph(metric, days_since_d1):
+    return update_graph('AL', metric, days_since_d1)
+
+### AR
+@app.callback(
+    [Output('AR-metric-info-today', 'children'), Output('AR-metric-info-increase', 'children')],
+    [Input('metric-select', 'value'), Input('date-slider', 'value')]
+)
+def update_AR_info(metric, days_since_d1):
+    return update_info('AR', metric, days_since_d1)
+@app.callback(
+    Output('AR-metric-graph', 'figure'),
+    [Input('metric-select', 'value'), Input('date-slider', 'value')]
+)
+def update_AR_graph(metric, days_since_d1):
+    return update_graph('AR', metric, days_since_d1)
+
+### AZ
+@app.callback(
+    [Output('AZ-metric-info-today', 'children'), Output('AZ-metric-info-increase', 'children')],
+    [Input('metric-select', 'value'), Input('date-slider', 'value')]
+)
+def update_AZ_info(metric, days_since_d1):
+    return update_info('AZ', metric, days_since_d1)
+@app.callback(
+    Output('AZ-metric-graph', 'figure'),
+    [Input('metric-select', 'value'), Input('date-slider', 'value')]
+)
+def update_AZ_graph(metric, days_since_d1):
+    return update_graph('AZ', metric, days_since_d1)
+
+### CA
+@app.callback(
+    [Output('CA-metric-info-today', 'children'), Output('CA-metric-info-increase', 'children')],
+    [Input('metric-select', 'value'), Input('date-slider', 'value')]
+)
+def update_CA_info(metric, days_since_d1):
+    return update_info('CA', metric, days_since_d1)
+@app.callback(
+    Output('CA-metric-graph', 'figure'),
+    [Input('metric-select', 'value'), Input('date-slider', 'value')]
+)
+def update_CA_graph(metric, days_since_d1):
+    return update_graph('CA', metric, days_since_d1)
+
+### CO
+@app.callback(
+    [Output('CO-metric-info-today', 'children'), Output('CO-metric-info-increase', 'children')],
+    [Input('metric-select', 'value'), Input('date-slider', 'value')]
+)
+def update_CO_info(metric, days_since_d1):
+    return update_info('CO', metric, days_since_d1)
+@app.callback(
+    Output('CO-metric-graph', 'figure'),
+    [Input('metric-select', 'value'), Input('date-slider', 'value')]
+)
+def update_CO_graph(metric, days_since_d1):
+    return update_graph('CO', metric, days_since_d1)

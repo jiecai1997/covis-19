@@ -37,6 +37,10 @@ def clean_dataframe(df, level):
         df (pandas dataframe): cleaned dataframe
     '''
 
+    if level == 'state':
+        # remove US territories for 50 states + DC info only
+        df = df[~df['state'].isin(['AS', 'GU', 'MP', 'PR', 'VI'])]
+
     # datetime date column
     df['date'] = pd.to_datetime(df['date'].apply(str), format='%Y%m%d')
 
