@@ -3,9 +3,6 @@ import numpy as np
 import requests
 from datetime import datetime, timedelta
 from const import COLS_RENAME
-import time
-import os
-from flask_caching import Cache
 from app import server
 
 ### METHODS
