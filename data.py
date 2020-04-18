@@ -8,14 +8,7 @@ import os
 from flask_caching import Cache
 from app import server
 
-cache = Cache(server, config={
-    'CACHE_TYPE': 'redis',
-    'CACHE_REDIS_URL': os.environ.get('REDIS_URL', '')
-})
-TIMEOUT = 60
-
 ### METHODS
-@cache.memoize(timeout=TIMEOUT)
 def dataframe_from_request(url):
     '''
     Returns pandas dataframe from API request's JSON format
@@ -33,7 +26,6 @@ def dataframe_from_request(url):
 
     return df
 
-@cache.memoize(timeout=TIMEOUT)
 def clean_dataframe(df, level):
     '''
     Cleans dataframe:
