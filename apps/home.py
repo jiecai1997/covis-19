@@ -132,12 +132,11 @@ child = [
         ]
     ),
     html.Hr(),
-    html.Div(id = 'metric-table')
+    #html.Div(id = 'metric-table')
     #html.H5(children = 'State Statistics'),
     #dcc.Loading(dcc.Graph(id = 'metric-graph-all-states'), color = '#222222', type = 'circle'),
 ]
 
-'''
 for i in range(17):
     state1, state2, state3 = STATES[3*i], STATES[3*i+1], STATES[3*i+2]
     new_div = html.Div(
@@ -170,7 +169,6 @@ for i in range(17):
         ]
     )
     child.append(new_div)
-'''
 
 ### APP LAYOUT
 layout = html.Div(
@@ -370,6 +368,7 @@ def update_metric_map(days_since_d1, metric):
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     return fig
 
+'''
 ##### table
 @app.callback(
     Output('metric-table', 'children'),
@@ -414,4 +413,3 @@ for state in STATES:
     )
     def update_state_graph(metric, days_since_d1, state = state):
         return update_graph(state, metric, days_since_d1)
-'''
