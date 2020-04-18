@@ -2,9 +2,20 @@ import pandas as pd
 import numpy as np
 import requests
 from datetime import datetime, timedelta
-from const import COLS_RENAME#, COLS_REORDER
+from const import COLS_RENAME
+import time
+import os
+from flask_caching import Cache
+from app import server
+
+cache = Cache(server, config={
+    'CACHE_TYPE': 'redis',
+    'CACHE_REDIS_URL': os.environ.get('REDIS_URL', '')
+})
+TIMEOUT = 60
 
 ### METHODS
+@cache.memoize(timeout=TIMEOUT)
 def dataframe_from_request(url):
     '''
     Returns pandas dataframe from API request's JSON format
@@ -22,6 +33,7 @@ def dataframe_from_request(url):
 
     return df
 
+@cache.memoize(timeout=TIMEOUT)
 def clean_dataframe(df, level):
     '''
     Cleans dataframe:
@@ -69,6 +81,8 @@ def clean_dataframe(df, level):
 URL_STATES_API = 'https://covidtracking.com/api/v1/states/daily.json'
 DF_STATES = dataframe_from_request(URL_STATES_API)
 DF_STATES = clean_dataframe(DF_STATES, 'state')
+
+STATES = DF_STATES['State'].unique()
 
 # federal data
 URL_FEDERAL_API = 'https://covidtracking.com/api/us/daily'
