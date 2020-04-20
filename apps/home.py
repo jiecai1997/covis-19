@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from app import app, server
 from dash.dependencies import Input, Output
 import dash_table
+from dash_table.Format import Format, Sign
+import dash_table.FormatTemplate as FormatTemplate
 import pandas as pd
 
 gh = {'height': '100px'}
@@ -37,7 +39,8 @@ child = [
                 children = [
                     html.H1(html.Strong(id = 'federal-positive-info-today')),
                     html.Strong('Positive, Cumulative'),
-                    html.P(id = 'federal-positive-info-increase')
+                    html.Div(id = 'federal-positive-info-1d'),
+                    html.Div(id = 'federal-positive-info-1w')
                 ]
             ),
             html.Div(
@@ -49,7 +52,8 @@ child = [
                 children = [
                     html.H1(html.Strong(id = 'federal-deaths-info-today')),
                     html.Strong('Deaths, Cumulative'),
-                    html.P(id = 'federal-deaths-info-increase')
+                    html.Div(id = 'federal-deaths-info-1d'),
+                    html.Div(id = 'federal-deaths-info-1w')
                 ]
             ),
             html.Div(
@@ -61,7 +65,8 @@ child = [
                 children = [
                     html.H1(html.Strong(id = 'federal-recovered-info-today')),
                     html.Strong('Recovered, Cumulative'),
-                    html.P(id = 'federal-recovered-info-increase')
+                    html.Div(id = 'federal-recovered-info-1d'),
+                    html.Div(id = 'federal-recovered-info-1w')
                 ]
             ),
             html.Div(
@@ -110,9 +115,10 @@ child = [
                             html.Div(
                                 className = 'six columns',
                                 children = [
-                                    html.H1(html.Strong(id = 'federal-metrics-info-today')),
+                                    html.H1(html.Strong(id = 'federal-metric-info-today')),
                                     html.Strong(id = 'metric-name-2'),
-                                    html.P(id = 'federal-metrics-info-increase')
+                                    html.Div(id = 'federal-metric-info-1d'),
+                                    html.Div(id = 'federal-metric-info-1w'),
                                 ]
                             ),
                             html.Div(
@@ -132,8 +138,7 @@ child = [
         ]
     ),
     html.Hr(),
-    #html.Div(id = 'metric-table')
-    #html.H5(children = 'State Statistics'),
+    html.H5(children = 'State Statistics'),
     #dcc.Loading(dcc.Graph(id = 'metric-graph-all-states'), color = '#222222', type = 'circle'),
 ]
 
@@ -144,7 +149,12 @@ for i in range(17):
         children = [
             html.Div(
                 className = 'two columns',
-                children = [html.H3(html.Strong(id = f'{state1}-metric-info-today')),html.Strong(f'{state1}'), html.P(id = f'{state1}-metric-info-increase')]
+                children = [
+                    html.H3(html.Strong(id = f'{state1}-metric-info-today')),
+                    html.Strong(f'{state1}'), 
+                    html.Div(id = f'{state1}-metric-info-1d'),
+                    html.Div(id = f'{state1}-metric-info-1w')
+                ]
             ),
             html.Div(
                 className = 'two columns',
@@ -152,7 +162,12 @@ for i in range(17):
             ),
             html.Div(
                 className = 'two columns',
-                children = [html.H3(html.Strong(id = f'{state2}-metric-info-today')), html.Strong(f'{state2}'), html.P(id = f'{state2}-metric-info-increase')]
+                children = [
+                    html.H3(html.Strong(id = f'{state2}-metric-info-today')),
+                    html.Strong(f'{state2}'), 
+                    html.Div(id = f'{state2}-metric-info-1d'),
+                    html.Div(id = f'{state2}-metric-info-1w')
+                ]
             ),
             html.Div(
                 className = 'two columns',
@@ -160,7 +175,12 @@ for i in range(17):
             ),
             html.Div(
                 className = 'two columns',
-                children = [html.H3(html.Strong(id = f'{state3}-metric-info-today')), html.Strong(f'{state3}'), html.P(id = f'{state3}-metric-info-increase')]
+                children = [
+                    html.H3(html.Strong(id = f'{state3}-metric-info-today')),
+                    html.Strong(f'{state3}'), 
+                    html.Div(id = f'{state3}-metric-info-1d'),
+                    html.Div(id = f'{state3}-metric-info-1w')
+                ]
             ),
             html.Div(
                 className = 'two columns',
@@ -169,12 +189,40 @@ for i in range(17):
         ]
     )
     child.append(new_div)
+    child.append(html.Br())
+
+child.append(html.Hr())
+child.append(html.Div(id = 'metric-table'))
 
 ### APP LAYOUT
 layout = html.Div(
     className = 'container',
     children = child
 )
+
+# HELPER FUNCTIONS
+# absolute difference
+def abs_diff(b, a):
+    return b - a
+# % difference
+def perc_diff(b, a):
+    return (b / a - 1) if a != 0 else 0
+# info given a certain day
+def get_info(state, metric, days_since_d1, days_diff, output):
+    if output == 'info':
+        if state  == 'federal':
+            data = sum(DF_FEDERAL[DF_FEDERAL['Days Since First Case'] == (days_since_d1 - days_diff)][metric])
+        else:
+            data = sum(DF_STATES[(DF_STATES['State'] == state) & (DF_STATES['Days Since First Case'] == (days_since_d1 - days_diff))][metric])
+        data = data if data else 0
+    if output == 'graph':
+        if state == 'federal':
+            data = DF_FEDERAL[DF_FEDERAL['Days Since First Case'] <= (days_since_d1 - days_diff)][['Date', metric]]
+        else:
+            data = DF_STATES[(DF_STATES['State'] == state) & (DF_STATES['Days Since First Case'] <= (days_since_d1 - days_diff))][['Date', metric]]
+    if output == 'table':
+        data = DF_STATES[DF_STATES['Days Since First Case'] == (days_since_d1 - days_diff)][['State', metric]]
+    return data
 
 # CALLBACK FUNCTIONS
 ### CALLBACK FUNCTION - METRIC NAME
@@ -186,34 +234,28 @@ def update_definition(metric):
 ### CALLBACK FUNCTION - NUMBERS
 def update_info(state, metric, days_since_d1):
     # calculate basic information
-    if state == 'federal':
-        today_info = sum(DF_FEDERAL[DF_FEDERAL['Days Since First Case'] == days_since_d1][metric])
-        yesterday_info = sum(DF_FEDERAL[DF_FEDERAL['Days Since First Case'] == (days_since_d1 - 1)][metric])
-    else:
-        today_info = sum(DF_STATES[(DF_STATES['State'] == state) & (DF_STATES['Days Since First Case'] == days_since_d1)][metric])
-        yesterday_info = sum(DF_STATES[(DF_STATES['State'] == state) & (DF_STATES['Days Since First Case'] == (days_since_d1 - 1))][metric])
-    yesterday_info = yesterday_info if yesterday_info else 0
+    info_today = get_info(state, metric, days_since_d1, 0, 'info')
+    info_1d = get_info(state, metric, days_since_d1, 1, 'info')
+    info_1w = get_info(state, metric, days_since_d1, 7, 'info')
 
     # calculate difference information
-    abs_diff = today_info - yesterday_info
-    perc_diff = (today_info / yesterday_info - 1) if yesterday_info != 0 else 0
-    plus = '+' if abs_diff >=0 else ''
+    abs_diff_1d = abs_diff(info_today, info_1d)
+    abs_diff_1w = abs_diff(info_today, info_1w)
+    perc_diff_1d = perc_diff(info_today, info_1d)
+    perc_diff_1w = perc_diff(info_today, info_1w)
+    plus_1d = '+' if abs_diff_1d >=0 else ''
+    plus_1w = '+' if abs_diff_1w >=0 else ''
 
     # format for string printing
-    today_info = f'{int(today_info):,}'
-    increase_info = f'{plus}{int(abs_diff):,}, {perc_diff:.1%}'
+    info_today = f'{int(info_today):,}'
+    info_increase_1d = f'1D | {plus_1d}{int(abs_diff_1d):,}, {plus_1d}{perc_diff_1d:.1%}'
+    info_increase_1w = f'1W | {plus_1w}{int(abs_diff_1w):,}, {plus_1w}{perc_diff_1w:.1%}'
 
-    return today_info, increase_info
+    return info_today, info_increase_1d, info_increase_1w
 
 ### CALLBACK FUNCTION - GRAPH
 def update_graph(state, metric, days_since_d1):
-    # make figure
-    if state == 'federal':
-        data = DF_FEDERAL[DF_FEDERAL['Days Since First Case'] <= days_since_d1][['Date', metric]]
-    elif state == 'all':
-        data = DF_STATES[DF_STATES['Days Since First Case'] <= days_since_d1][['Date', 'State', metric]]
-    else:
-        data = DF_STATES[(DF_STATES['State'] == state) & (DF_STATES['Days Since First Case'] <= days_since_d1)][['Date', metric]]
+    data = get_info(state, metric, days_since_d1, 0, 'graph')
     fig = px.line(
             data, 
             x = 'Date',
@@ -221,8 +263,7 @@ def update_graph(state, metric, days_since_d1):
             color = 'State' if state == 'all' else None,
             template = 'plotly_white',
             color_discrete_map = {metric: 'Orange'},
-            color_discrete_sequence = ['#'+(str(hex(i))[-6:]).upper() for i in range(int("0x6A5D96", 0), int("0x965D6C", 0), 51)] if state == 'all' else None,
-            height = 600 if state == 'all' else 100
+            height = 120
     )
     # edit display
     fig.update_xaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
@@ -237,19 +278,22 @@ def update_graph(state, metric, days_since_d1):
         fig.update_annotations(dict(xref="x", yref="y", showarrow=True, arrowhead=7, ax=40, ay=0))
     return fig
 
-def abs_diff(b, a):
-    return b - a
-def perc_diff(b, a):
-    return (b / a - 1) if a != 0 else 0
-
+### CALLBACK FUNCTION - TABLE
 def update_df(metric, days_since_d1):
+    '''
     today_info = DF_STATES[DF_STATES['Days Since First Case'] == days_since_d1][['Date', 'State', metric]]
     yesterday_info = DF_STATES[DF_STATES['Days Since First Case'] == (days_since_d1-1)][['Date', 'State', metric]]
-    temp = pd.merge(today_info, yesterday_info, how='left', on=['State'], suffixes=(None, '_y'))
-    temp['Absolute Difference, Daily'] = temp[[metric, f'{metric}_y']].apply(lambda x:abs_diff(*x), axis=1)
-    temp['% Difference, Daily'] = temp[[metric, f'{metric}_y']].apply(lambda x: perc_diff(*x), axis=1)
-    temp['% Difference, Daily'] = round(temp['% Difference, Daily']*100, 1)
-    temp.drop(columns=['Date_y', f'{metric}_y'], inplace=True)
+    '''
+    info_today = get_info(state, metric, days_since_d1, 0, 'table')
+    info_1d = get_info(state, metric, days_since_d1, 1, 'table')
+    info_1w = get_info(state, metric, days_since_d1, 7, 'table')
+    temp = pd.merge(info_today, info_1d, how='left', on=['State'], suffixes=(None, '_1D'))
+    temp = pd.merge(temp, info_1w, how='left', on=['State'], suffixes=(None, '_1W'))
+    temp['1D | # Difference'] = temp[[metric, f'{metric}_1D']].apply(lambda x:abs_diff(*x), axis=1)
+    temp['1W | # Difference'] = temp[[metric, f'{metric}_1W']].apply(lambda x:abs_diff(*x), axis=1)
+    temp['1D | % Difference'] = temp[[metric, f'{metric}_1D']].apply(lambda x: perc_diff(*x), axis=1)
+    temp['1W | % Difference'] = temp[[metric, f'{metric}_1W']].apply(lambda x: perc_diff(*x), axis=1)
+    temp.drop(columns=[f'{metric}_1D', f'{metric}_1W'], inplace=True)
     temp.sort_values([metric], ascending=False, inplace=True)
     temp.reset_index(drop=True, inplace=True)
     return temp
@@ -258,21 +302,33 @@ def update_df(metric, days_since_d1):
 ### KEY 3 METRICS
 ##### key 3 metrics - numbers
 @app.callback(
-    [Output('federal-positive-info-today', 'children'), Output('federal-positive-info-increase', 'children')],
+    [
+        Output('federal-positive-info-today', 'children'), 
+        Output('federal-positive-info-1d', 'children'),
+        Output('federal-positive-info-1w', 'children'),
+    ],
     [Input('date-slider', 'value')]
 )
 def update_federal_positive_info(days_since_d1):
     return update_info('federal', 'Positive, Cumulative', days_since_d1)
 
 @app.callback(
-    [Output('federal-deaths-info-today', 'children'), Output('federal-deaths-info-increase', 'children')],
+    [
+        Output('federal-deaths-info-today', 'children'), 
+        Output('federal-deaths-info-1d', 'children'),
+        Output('federal-deaths-info-1w', 'children'),
+    ],
     [Input('date-slider', 'value')]
 )
 def update_federal_deaths_info(days_since_d1):
     return update_info('federal', 'Deaths, Cumulative', days_since_d1)
 
 @app.callback(
-    [Output('federal-recovered-info-today', 'children'), Output('federal-recovered-info-increase', 'children')],
+    [
+        Output('federal-recovered-info-today', 'children'), 
+        Output('federal-recovered-info-1d', 'children'),
+        Output('federal-recovered-info-1w', 'children'),
+    ],
     [Input('date-slider', 'value')]
 )
 def update_federal_recovered_info(days_since_d1):
@@ -326,13 +382,15 @@ def update_metric_display(metric):
 ##### metric overall - info
 @app.callback(
     [
-        Output('federal-metrics-info-today', 'children'), 
-        Output('federal-metrics-info-increase', 'children'),
+        Output('federal-metric-info-today', 'children'), 
+        Output('federal-metric-info-1d', 'children'),
+        Output('federal-metric-info-1w', 'children'),
     ],
     [Input('date-slider', 'value'), Input('metric-select', 'value')]
 )
 def update_federal_metrics_info(days_since_d1, metric):
     return update_info('federal', metric, days_since_d1)
+
 @app.callback(
     Output('metric-name-2', 'children'),
     [Input('metric-select', 'value')]
@@ -368,41 +426,14 @@ def update_metric_map(days_since_d1, metric):
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     return fig
 
-'''
-##### table
-@app.callback(
-    Output('metric-table', 'children'),
-    [Input('date-slider', 'value'), Input('metric-select', 'value')]
-)
-def update_netric_table(days_since_d1, metric):
-    df = update_df(metric, days_since_d1)
-    cols=[{"name": i, "id": i} for i in df.columns]
-    da = df.to_dict('records')
-    output = dash_table.DataTable(
-        columns = cols,
-        data = da,
-        sort_action='native',
-        filter_action='native',
-        style_cell={'fontSize':16, 'font-family':'sans-serif'},
-        style_header={'backgroundColor': 'rgb(230, 230, 230)', 'fontWeight': 'bold'},
-        style_as_list_view=True,
-    )
-    return output
-
-'''
-### METRIC PER STATE
-##### metric all states - graph
-@app.callback(
-    Output('metric-graph-all-states', 'figure'),
-    [Input('metric-select', 'value'), Input('date-slider', 'value')]
-)
-def update_metric_graph_all_states(metric, days_since_d1):
-    return update_graph('all', metric, days_since_d1)
-
-##### 50 (+DC) invididual states
+##### states graph
 for state in STATES:
     @app.callback(
-        [Output(f'{state}-metric-info-today', 'children'), Output(f'{state}-metric-info-increase', 'children')],
+    [
+        Output(f'{state}-metric-info-today', 'children'), 
+        Output(f'{state}-metric-info-1d', 'children'),
+        Output(f'{state}-metric-info-1w', 'children'),
+    ],
         [Input('metric-select', 'value'), Input('date-slider', 'value')]
     )
     def update_state_info(metric, days_since_d1, state = state):
@@ -413,3 +444,30 @@ for state in STATES:
     )
     def update_state_graph(metric, days_since_d1, state = state):
         return update_graph(state, metric, days_since_d1)
+
+##### states table
+@app.callback(
+    Output('metric-table', 'children'),
+    [Input('date-slider', 'value'), Input('metric-select', 'value')]
+)
+def update_netric_table(days_since_d1, metric):
+    df = update_df(metric, days_since_d1)
+    cols=[
+        {'name': 'State', 'id': 'State'},
+        {'name': metric, 'id': metric, 'type': 'numeric', 'format': Format(group=',')},
+        {'name': '1D | # Difference', 'id': '1D | # Difference', 'type': 'numeric', 'format': Format(group=',')},
+        {'name': '1W | # Difference', 'id': '1W | # Difference', 'type': 'numeric', 'format': Format(group=',')},
+        {'name': '1D | % Difference', 'id': '1D | % Difference', 'type': 'numeric', 'format': FormatTemplate.percentage(1).sign(Sign.positive)},
+        {'name': '1W | % Difference', 'id': '1W | % Difference', 'type': 'numeric', 'format': FormatTemplate.percentage(1).sign(Sign.positive)}
+    ]
+    da = df.to_dict('records')
+    output = dash_table.DataTable(
+        columns = cols,
+        data = da,
+        sort_action='native',
+        filter_action='native',
+        style_cell={'fontSize':15, 'font-family':'sans-serif', 'textAlign': 'left'},
+        style_header={'backgroundColor': 'white', 'fontWeight': 'bold'},
+        style_as_list_view=True,
+    )
+    return output
