@@ -18,8 +18,8 @@ DF = pd.DataFrame(columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Adj Close'
 for t in INDEXES:
     df = yf.download(t, start='2020-01-01', end='2020-04-21').reset_index()
     df['Stock'] = t
-    df['% Diff 1D'] = df['Close'].pct_change()
+    df['% Delta 1D'] = df['Close'].pct_change()
     initial = df[df['Date'] == min(df['Date'])]['Close'][0]
-    df['% Diff YTD'] = ((df['Close'] - initial)/initial)*100
+    df['% Delta YTD'] = ((df['Close'] - initial)/initial)*100
     df['Days Since NY'] = df['Date'].apply(lambda x: (x - EARLIEST_DATE).days)
     DF = DF.append(df, ignore_index=True)

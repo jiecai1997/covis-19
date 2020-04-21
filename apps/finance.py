@@ -34,7 +34,7 @@ def FAANG_graph(days_since_ny):
     fig = px.line(
         data,
         x='Date',
-        y='% Diff YTD',
+        y='% Delta YTD',
         color='Stock',
         color_discrete_sequence = px.colors.qualitative.T10,
         template = 'plotly_white',
@@ -42,28 +42,28 @@ def FAANG_graph(days_since_ny):
     )
     fig.update_layout(legend_orientation="h", legend=dict(x=-.1, y=1.1))
     for i, row in data[data['Date'] == latest_day].iterrows():
-        plus = '+' if row['% Diff YTD'] >= 0 else ''
-        fig.add_annotation(x=row['Date'], y=row['% Diff YTD'], text=f"{row['Stock']} {plus}{round(row['% Diff YTD'], 1)}%")
+        plus = '+' if row['% Delta YTD'] >= 0 else ''
+        fig.add_annotation(x=row['Date'], y=row['% Delta YTD'], text=f"{row['Stock']} {plus}{round(row['% Delta YTD'], 1)}%")
     
     if latest_day >= datetime.strptime('2020-01-21', '%Y-%m-%d'):
-        fig.add_shape(dict(type="line", x0='2020-01-21', y0=min(data['% Diff YTD']), x1='2020-01-21', y1=max(data['% Diff YTD']), 
+        fig.add_shape(dict(type="line", x0='2020-01-21', y0=min(data['% Delta YTD']), x1='2020-01-21', y1=max(data['% Delta YTD']), 
                         line=dict(color='Black', width=0.1, dash="dot")))
-        fig.add_annotation(x='2020-01-21', y=max(data['% Diff YTD'])+1, text='01/21 - 1st US COV19 Case')
+        fig.add_annotation(x='2020-01-21', y=max(data['% Delta YTD'])+1, text='01/21 - 1st US COV19 Case')
 
     if latest_day >= datetime.strptime('2020-02-19', '%Y-%m-%d'):
-        fig.add_shape(dict(type="line", x0='2020-02-19', y0=min(data['% Diff YTD']), x1='2020-02-19', y1=max(data['% Diff YTD']), 
+        fig.add_shape(dict(type="line", x0='2020-02-19', y0=min(data['% Delta YTD']), x1='2020-02-19', y1=max(data['% Delta YTD']), 
                         line=dict(color='Black', width=0.1, dash="dot")))
-        fig.add_annotation(x='2020-02-19', y=max(data['% Diff YTD'])+1, text='02/19 - Mkt Record High')
+        fig.add_annotation(x='2020-02-19', y=max(data['% Delta YTD'])+1, text='02/19 - Mkt Record High')
 
     if latest_day >= datetime.strptime('2020-02-28', '%Y-%m-%d'):
-        fig.add_shape(dict(type="line", x0='2020-02-28', y0=min(data['% Diff YTD']), x1='2020-02-28', y1=max(data['% Diff YTD'])-2, 
+        fig.add_shape(dict(type="line", x0='2020-02-28', y0=min(data['% Delta YTD']), x1='2020-02-28', y1=max(data['% Delta YTD'])-2, 
                         line=dict(color='Black', width=0.1, dash="dot")))
-        fig.add_annotation(x='2020-02-28', y=max(data['% Diff YTD'])-1, text='02/28 - Mkt Correction (-10%)')
+        fig.add_annotation(x='2020-02-28', y=max(data['% Delta YTD'])-1, text='02/28 - Mkt Correction (-10%)')
 
     if latest_day >= datetime.strptime('2020-03-09', '%Y-%m-%d'):
-        fig.add_shape(dict(type="line", x0='2020-03-09', y0=min(data['% Diff YTD']), x1='2020-03-09', y1=max(data['% Diff YTD'])-4, 
+        fig.add_shape(dict(type="line", x0='2020-03-09', y0=min(data['% Delta YTD']), x1='2020-03-09', y1=max(data['% Delta YTD'])-4, 
                         line=dict(color='Black', width=0.1, dash="dot")))
-        fig.add_annotation(x='2020-03-09', y=max(data['% Diff YTD'])-3, text='03/09 - Bear Mrt (-20%)')
+        fig.add_annotation(x='2020-03-09', y=max(data['% Delta YTD'])-3, text='03/09 - Bear Mrt (-20%)')
 
     fig.update_annotations(dict(xref="x", yref="y", showarrow=True, arrowhead=7, ax=60, ay=0))
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})

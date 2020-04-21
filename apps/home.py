@@ -147,6 +147,7 @@ child = [
     dcc.Loading(dcc.Graph(id = 'metric-graph-all-states'), color = '#222222', type = 'circle'),
     html.Br(),
     html.Br(),
+    dcc.Loading(dcc.Graph(id = 'metric-graph-individual-states'), color = '#222222', type = 'circle'),
 ]
 
 '''
@@ -212,7 +213,7 @@ layout = html.Div(
 # absolute difference
 def abs_diff(b, a):
     return b - a
-# % difference
+# % Delta
 def perc_diff(b, a):
     return (b / a - 1) if a != 0 else 0
 # info given a certain day
@@ -230,11 +231,18 @@ def get_info(state, metric, days_since_d1, days_diff, output):
             data = DF_STATES[DF_STATES['Days Since First Case'] <= (days_since_d1 - days_diff)][['Date', 'State', metric]]
             top_3_states = data.sort_values(by=['Date', metric], ascending=False).head(3)['State'].values
             data['Top 3 States'] = data['State'].isin(top_3_states).astype(int)
+        elif state == 'all_states':
+            data = DF_STATES[DF_STATES['Days Since First Case'] <= (days_since_d1 - days_diff)][['Date', 'State', metric]]
         else:
             data = DF_STATES[(DF_STATES['State'] == state) & (DF_STATES['Days Since First Case'] <= (days_since_d1 - days_diff))][['Date', metric]]
     if output == 'table':
         data = DF_STATES[DF_STATES['Days Since First Case'] == (days_since_d1 - days_diff)][['State', metric]]
     return data
+# state annotation function
+def annotate(a, metric, days_since_d1):
+    state = a.text.split("=")[-1]
+    info_today, info_increase_1d, info_increase_1w = update_info(state, metric, days_since_d1)
+    return a.update(text = f'<b>{state} {info_today}</b><br>{info_increase_1d}<br>{info_increase_1w}')
 
 # CALLBACK FUNCTIONS
 ### CALLBACK FUNCTION - METRIC NAME
@@ -268,24 +276,41 @@ def update_info(state, metric, days_since_d1):
 ### CALLBACK FUNCTION - GRAPH
 def update_graph(state, metric, days_since_d1):
     data = get_info(state, metric, days_since_d1, 0, 'graph')
-    fig = px.line(
-            data, 
-            x = 'Date',
-            y = metric, 
-            line_group = 'State' if state == 'all' else None,
-            color = 'Top 3 States' if state == 'all' else None,
-            template = 'plotly_white',
-            color_discrete_sequence = ['rgb(222, 222, 222)', 'rgb(228, 26, 28)'] if state == 'all' else ['rgb(228, 26, 28)'],
-            category_orders={'Top 3 States': [0, 1]},
-            hover_name= 'State' if state == 'all' else None,
-            height = 120 if state != 'all' else 600,
-            log_y= True if state == 'all' else False
-    )
+    if state != 'all_states':
+        fig = px.line(
+                data, 
+                x = 'Date',
+                y = metric, 
+                line_group = 'State' if state == 'all' else None,
+                color = 'Top 3 States' if state == 'all' else None,
+                template = 'plotly_white',
+                color_discrete_sequence = ['rgb(222, 222, 222)', 'rgb(228, 26, 28)'] if state == 'all' else ['rgb(228, 26, 28)'],
+                category_orders={'Top 3 States': [0, 1]},
+                hover_name= 'State' if state == 'all' else None,
+                height = 120 if state != 'all' else 600,
+                log_y= True if state == 'all' else False
+        )
+    elif state == 'all_states':
+        fig = px.line(
+                data, 
+                x = 'Date',
+                y = metric,
+                hover_name= 'State',
+                facet_col = 'State',
+                facet_col_wrap = 6,
+                color_discrete_sequence = ['rgb(228, 26, 28)'],
+                height = 2400,
+                template = 'plotly_white'
+        )
+        fig.update_yaxes(matches=None)
+        fig.for_each_annotation(lambda a: annotate(a, metric, days_since_d1))
+        fig.update_layout(margin={"r":0,"t":50,"l":0,"b":50})
     # edit display
     if state != 'all':
         fig.update_xaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
         fig.update_yaxes(showticklabels=False, visible=False, tickfont=dict(size=1))
-    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+    if state != 'all_states':
+        fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     if state == 'all':
         # add state info
         fig.update_layout(showlegend=False)
@@ -293,23 +318,24 @@ def update_graph(state, metric, days_since_d1):
         for i, row in data_top.iterrows():
             fig.add_annotation(x=row['Date'], y=math.log10(row[metric]), text=f'#{i+1} {row["State"]}')
         # add descriptive info
-        min_v = 1
         max_v = max(data[metric])
+        min_v = -1/math.log10(max_v/10)
+        fig.update_yaxes(range=[min_v, math.log10(max_v*2)])
         # first death
         if max(data['Date']) >= '2020-02-28':
             fig.add_shape(dict(type="line", x0='2020-02-28', y0=min_v, x1='2020-02-28', y1=max_v, 
                     line=dict(color='Grey', width=0.1, dash="dot")))
-            fig.add_annotation(x='2020-02-28', y=math.log10(max_v), text='2/28 - 1st US COV-19 Death')
+            fig.add_annotation(x='2020-02-28', y=math.log10(max_v), text='2/28 - 1st US COVID-19 Death')
         # state of emergency
         if max(data['Date']) >= '2020-03-13':
             fig.add_shape(dict(type="line", x0='2020-03-13', y0=min_v, x1='2020-03-13', y1=max_v, 
                     line=dict(color='Grey', width=0.1, dash="dot")))
-            fig.add_annotation(x='2020-03-13', y=math.log10(max_v), text='3/13 - State of Emergency')
+            fig.add_annotation(x='2020-03-13', y=math.log10(max_v), text='3/13 - State of Emergency Decleared')
         # US becomes number 1 in cases
         if max(data['Date']) >= '2020-03-26':
             fig.add_shape(dict(type="line", x0='2020-03-26', y0=min_v, x1='2020-03-26', y1=max_v, 
                 line=dict(color='Grey', width=0.1, dash="dot")))
-            fig.add_annotation(x='2020-03-26', y=math.log10(max_v), text='3/26 - US Leads in Cases')
+            fig.add_annotation(x='2020-03-26', y=math.log10(max_v), text='3/26 - US Leads in COVID-19 Cases')
         # style
         fig.update_annotations(dict(xref="x", yref="y", showarrow=True, arrowhead=7, ax=50, ay=0))
     return fig
@@ -321,10 +347,10 @@ def update_df(metric, days_since_d1):
     info_1w = get_info('all', metric, days_since_d1, 7, 'table')
     temp = pd.merge(info_today, info_1d, how='left', on=['State'], suffixes=(None, '_1D'))
     temp = pd.merge(temp, info_1w, how='left', on=['State'], suffixes=(None, '_1W'))
-    temp['1D | # Difference'] = temp[[metric, f'{metric}_1D']].apply(lambda x:abs_diff(*x), axis=1)
-    temp['1W | # Difference'] = temp[[metric, f'{metric}_1W']].apply(lambda x:abs_diff(*x), axis=1)
-    temp['1D | % Difference'] = temp[[metric, f'{metric}_1D']].apply(lambda x: perc_diff(*x), axis=1)
-    temp['1W | % Difference'] = temp[[metric, f'{metric}_1W']].apply(lambda x: perc_diff(*x), axis=1)
+    temp['1D | # Delta'] = temp[[metric, f'{metric}_1D']].apply(lambda x:abs_diff(*x), axis=1)
+    temp['1W | # Delta'] = temp[[metric, f'{metric}_1W']].apply(lambda x:abs_diff(*x), axis=1)
+    temp['1D | % Delta'] = temp[[metric, f'{metric}_1D']].apply(lambda x: perc_diff(*x), axis=1)
+    temp['1W | % Delta'] = temp[[metric, f'{metric}_1W']].apply(lambda x: perc_diff(*x), axis=1)
     temp.drop(columns=[f'{metric}_1D', f'{metric}_1W'], inplace=True)
     temp.sort_values([metric], ascending=False, inplace=True)
     temp.reset_index(drop=True, inplace=True)
@@ -467,6 +493,13 @@ def update_metric_map(days_since_d1, metric):
 def update_all_states_graph(days_since_d1, metric):
     return update_graph('all', metric, days_since_d1)
 
+@app.callback(
+    Output('metric-graph-individual-states', 'figure'),
+    [Input('date-slider', 'value'), Input('metric-select', 'value')]
+)
+def update_individual_states_graph(days_since_d1, metric):
+    return update_graph('all_states', metric, days_since_d1)
+
 '''
 ##### states graph
 for state in STATES:
@@ -499,10 +532,10 @@ def update_netric_table(days_since_d1, metric):
         {'name': 'Rank', 'id': 'Rank', 'type': 'numeric'},
         {'name': 'State', 'id': 'State'},
         {'name': metric, 'id': metric, 'type': 'numeric', 'format': Format(group=',')},
-        {'name': '1D | # Difference', 'id': '1D | # Difference', 'type': 'numeric', 'format': Format(group=',')},
-        {'name': '1W | # Difference', 'id': '1W | # Difference', 'type': 'numeric', 'format': Format(group=',')},
-        {'name': '1D | % Difference', 'id': '1D | % Difference', 'type': 'numeric', 'format': FormatTemplate.percentage(1).sign(Sign.positive)},
-        {'name': '1W | % Difference', 'id': '1W | % Difference', 'type': 'numeric', 'format': FormatTemplate.percentage(1).sign(Sign.positive)}
+        {'name': '1D | # Delta', 'id': '1D | # Delta', 'type': 'numeric', 'format': Format(group=',')},
+        {'name': '1W | # Delta', 'id': '1W | # Delta', 'type': 'numeric', 'format': Format(group=',')},
+        {'name': '1D | % Delta', 'id': '1D | % Delta', 'type': 'numeric', 'format': FormatTemplate.percentage(1).sign(Sign.positive)},
+        {'name': '1W | % Delta', 'id': '1W | % Delta', 'type': 'numeric', 'format': FormatTemplate.percentage(1).sign(Sign.positive)}
     ]
     da = df.to_dict('records')
     output = dash_table.DataTable(
@@ -510,7 +543,7 @@ def update_netric_table(days_since_d1, metric):
         data = da,
         sort_action='native',
         filter_action='native',
-        style_cell={'fontSize':15, 'font-family':'sans-serif', 'textAlign': 'left'},
+        style_cell={'fontSize':15, 'font-family':'sans-serif', 'textAlign': 'left', 'padding':'10px'},
         style_header={'backgroundColor': 'white', 'fontWeight': 'bold'},
         style_as_list_view=True,
     )
