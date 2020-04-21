@@ -1,15 +1,18 @@
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.express as px
-from data import DF_STATES, STATES, DF_FEDERAL, DELTA_DAYS, EARLIEST_DATE, LATEST_DATE
-from const import METRIC_SELECT_OPTIONS, METRIC_DEFINITIONS
-from datetime import datetime, timedelta
 from app import app, server
 from dash.dependencies import Input, Output
 import dash_table
 from dash_table.Format import Format, Sign
 import dash_table.FormatTemplate as FormatTemplate
+
 import pandas as pd
+import math
+
+from data.health import DF_STATES, STATES, DF_FEDERAL, DELTA_DAYS, EARLIEST_DATE, LATEST_DATE
+from const import METRIC_SELECT_OPTIONS, METRIC_DEFINITIONS
+from datetime import datetime, timedelta
 
 gh = {'height': '100px'}
 
@@ -19,12 +22,14 @@ child = [
         className = 'topnav',
         children = [
             html.Li(html.A(html.B('COVIS19'), className = 'active', href='#')),
-            html.Li(html.A('About', href='/about')),
-            html.Li(className = 'right', children=[html.A('Github', href='https://github.com/jiecai1997/covis19')])
+            html.Li(html.A('💊Health', className = 'active', href='#')),
+            html.Li(html.A('💵Finance', href='/finance')),
+            #html.Li(html.A('About', href='/about')),
+            html.Li(className = 'right', children=[html.A('💻Github', href='https://github.com/jiecai1997/covis19')])
         ]
     ),
     html.Br(),
-    html.H5(children = '💊Overall Statistics'),
+    html.H5(children = '💊Overall Metrics'),
     html.P(
         children = [html.A('Source', href = 'https://covidtracking.com/api'),
         ' updated ', LATEST_DATE.strftime('%Y/%m/%d'),
@@ -98,7 +103,7 @@ child = [
                     html.Br(),
                     html.Br(),
                     # metric
-                    html.H5('Metric'),
+                    html.H5('Specific Metric'),
                     html.Strong(id = 'metric-name'),
                     html.P(id = 'metric-definition'), 
                     dcc.Dropdown(
@@ -139,9 +144,12 @@ child = [
     ),
     html.Hr(),
     html.H5(children = 'State Statistics'),
-    #dcc.Loading(dcc.Graph(id = 'metric-graph-all-states'), color = '#222222', type = 'circle'),
+    dcc.Loading(dcc.Graph(id = 'metric-graph-all-states'), color = '#222222', type = 'circle'),
+    html.Br(),
+    html.Br(),
 ]
 
+'''
 for i in range(17):
     state1, state2, state3 = STATES[3*i], STATES[3*i+1], STATES[3*i+2]
     new_div = html.Div(
@@ -190,8 +198,8 @@ for i in range(17):
     )
     child.append(new_div)
     child.append(html.Br())
-
-child.append(html.Hr())
+child.append(html.Br())
+'''
 child.append(html.Div(id = 'metric-table'))
 
 ### APP LAYOUT
@@ -218,6 +226,10 @@ def get_info(state, metric, days_since_d1, days_diff, output):
     if output == 'graph':
         if state == 'federal':
             data = DF_FEDERAL[DF_FEDERAL['Days Since First Case'] <= (days_since_d1 - days_diff)][['Date', metric]]
+        elif state == 'all':
+            data = DF_STATES[DF_STATES['Days Since First Case'] <= (days_since_d1 - days_diff)][['Date', 'State', metric]]
+            top_3_states = data.sort_values(by=['Date', metric], ascending=False).head(3)['State'].values
+            data['Top 3 States'] = data['State'].isin(top_3_states).astype(int)
         else:
             data = DF_STATES[(DF_STATES['State'] == state) & (DF_STATES['Days Since First Case'] <= (days_since_d1 - days_diff))][['Date', metric]]
     if output == 'table':
@@ -260,33 +272,53 @@ def update_graph(state, metric, days_since_d1):
             data, 
             x = 'Date',
             y = metric, 
-            color = 'State' if state == 'all' else None,
+            line_group = 'State' if state == 'all' else None,
+            color = 'Top 3 States' if state == 'all' else None,
             template = 'plotly_white',
-            color_discrete_map = {metric: 'Orange'},
-            height = 120
+            color_discrete_sequence = ['rgb(222, 222, 222)', 'rgb(228, 26, 28)'] if state == 'all' else ['rgb(228, 26, 28)'],
+            category_orders={'Top 3 States': [0, 1]},
+            hover_name= 'State' if state == 'all' else None,
+            height = 120 if state != 'all' else 600,
+            log_y= True if state == 'all' else False
     )
     # edit display
-    fig.update_xaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
-    fig.update_yaxes(showticklabels=False, visible=False, tickfont=dict(size=1))
+    if state != 'all':
+        fig.update_xaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
+        fig.update_yaxes(showticklabels=False, visible=False, tickfont=dict(size=1))
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     if state == 'all':
-        # TODO fix color scheme
-        fig.update_layout(legend_orientation='h')
-        data_top5 = data.sort_values(by=['Date', metric], ascending=False).head(3).reset_index()
-        for i, row in data_top5.iterrows():
-            fig.add_annotation(x=row['Date'], y=row[metric], text=f'{row["State"]} - #{i+1}')
-        fig.update_annotations(dict(xref="x", yref="y", showarrow=True, arrowhead=7, ax=40, ay=0))
+        # add state info
+        fig.update_layout(showlegend=False)
+        data_top = data.sort_values(by=['Date', metric], ascending=False).head(3).reset_index()
+        for i, row in data_top.iterrows():
+            fig.add_annotation(x=row['Date'], y=math.log10(row[metric]), text=f'#{i+1} {row["State"]}')
+        # add descriptive info
+        min_v = 1
+        max_v = max(data[metric])
+        # first death
+        if max(data['Date']) >= '2020-02-28':
+            fig.add_shape(dict(type="line", x0='2020-02-28', y0=min_v, x1='2020-02-28', y1=max_v, 
+                    line=dict(color='Grey', width=0.1, dash="dot")))
+            fig.add_annotation(x='2020-02-28', y=math.log10(max_v), text='2/28 - 1st US COV-19 Death')
+        # state of emergency
+        if max(data['Date']) >= '2020-03-13':
+            fig.add_shape(dict(type="line", x0='2020-03-13', y0=min_v, x1='2020-03-13', y1=max_v, 
+                    line=dict(color='Grey', width=0.1, dash="dot")))
+            fig.add_annotation(x='2020-03-13', y=math.log10(max_v), text='3/13 - State of Emergency')
+        # US becomes number 1 in cases
+        if max(data['Date']) >= '2020-03-26':
+            fig.add_shape(dict(type="line", x0='2020-03-26', y0=min_v, x1='2020-03-26', y1=max_v, 
+                line=dict(color='Grey', width=0.1, dash="dot")))
+            fig.add_annotation(x='2020-03-26', y=math.log10(max_v), text='3/26 - US Leads in Cases')
+        # style
+        fig.update_annotations(dict(xref="x", yref="y", showarrow=True, arrowhead=7, ax=50, ay=0))
     return fig
 
 ### CALLBACK FUNCTION - TABLE
 def update_df(metric, days_since_d1):
-    '''
-    today_info = DF_STATES[DF_STATES['Days Since First Case'] == days_since_d1][['Date', 'State', metric]]
-    yesterday_info = DF_STATES[DF_STATES['Days Since First Case'] == (days_since_d1-1)][['Date', 'State', metric]]
-    '''
-    info_today = get_info(state, metric, days_since_d1, 0, 'table')
-    info_1d = get_info(state, metric, days_since_d1, 1, 'table')
-    info_1w = get_info(state, metric, days_since_d1, 7, 'table')
+    info_today = get_info('all', metric, days_since_d1, 0, 'table')
+    info_1d = get_info('all', metric, days_since_d1, 1, 'table')
+    info_1w = get_info('all', metric, days_since_d1, 7, 'table')
     temp = pd.merge(info_today, info_1d, how='left', on=['State'], suffixes=(None, '_1D'))
     temp = pd.merge(temp, info_1w, how='left', on=['State'], suffixes=(None, '_1W'))
     temp['1D | # Difference'] = temp[[metric, f'{metric}_1D']].apply(lambda x:abs_diff(*x), axis=1)
@@ -296,6 +328,7 @@ def update_df(metric, days_since_d1):
     temp.drop(columns=[f'{metric}_1D', f'{metric}_1W'], inplace=True)
     temp.sort_values([metric], ascending=False, inplace=True)
     temp.reset_index(drop=True, inplace=True)
+    temp['Rank'] = temp.index + 1
     return temp
 
 # CALLBACKS
@@ -364,7 +397,7 @@ def update_federal_recovered_graph(days_since_d1):
 )
 def update_dates_display(days_since_d1):
     date_output = f'{(EARLIEST_DATE + timedelta(days=days_since_d1)).strftime("%Y/%m/%d")}'
-    days_since_d1_output = f'{days_since_d1} day(s) since first US COVID-19 case.'
+    days_since_d1_output = f'{days_since_d1} day(s) since first US COVID-19 death.'
     return date_output, days_since_d1_output
 
 ##### metric selection
@@ -420,12 +453,21 @@ def update_metric_map(days_since_d1, metric):
         range_color = (0, max(DF_STATES[metric])),
         locationmode = 'USA-states',
         scope = 'usa',
-        color_continuous_scale = 'Oranges',
+        color_continuous_scale = 'OrRd',
         labels = {metric: ''}
     )
     fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
     return fig
 
+##### metric graph all states
+@app.callback(
+    Output('metric-graph-all-states', 'figure'),
+    [Input('date-slider', 'value'), Input('metric-select', 'value')]
+)
+def update_all_states_graph(days_since_d1, metric):
+    return update_graph('all', metric, days_since_d1)
+
+'''
 ##### states graph
 for state in STATES:
     @app.callback(
@@ -444,6 +486,7 @@ for state in STATES:
     )
     def update_state_graph(metric, days_since_d1, state = state):
         return update_graph(state, metric, days_since_d1)
+'''
 
 ##### states table
 @app.callback(
@@ -453,6 +496,7 @@ for state in STATES:
 def update_netric_table(days_since_d1, metric):
     df = update_df(metric, days_since_d1)
     cols=[
+        {'name': 'Rank', 'id': 'Rank', 'type': 'numeric'},
         {'name': 'State', 'id': 'State'},
         {'name': metric, 'id': metric, 'type': 'numeric', 'format': Format(group=',')},
         {'name': '1D | # Difference', 'id': '1D | # Difference', 'type': 'numeric', 'format': Format(group=',')},

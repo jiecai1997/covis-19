@@ -3,7 +3,7 @@ import dash_html_components as html
 from dash.dependencies import Input, Output
 
 from app import app, server
-from apps import home, about
+from apps import home, finance, about
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
@@ -18,6 +18,8 @@ app.layout = html.Div([
 def display_page(pathname):
     if pathname == '/':
         return home.layout
+    elif pathname == '/finance':
+        return finance.layout
     elif pathname == '/about':
         return about.layout
 

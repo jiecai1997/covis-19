@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import requests
 from datetime import datetime, timedelta
-from const import COLS_RENAME
+from const import COLS_RENAME, STATE_POPULATIONS, US_POPULATION
 from app import server
 
 ### METHODS
@@ -41,6 +41,9 @@ def clean_dataframe(df, level):
     if level == 'state':
         # remove US territories for 50 states + DC info only
         df = df[~df['state'].isin(['AS', 'GU', 'MP', 'PR', 'VI'])]
+        df['Population'] = df['state'].map(STATE_POPULATIONS)
+    else:
+        df['Population'] = US_POPULATION
 
     # datetime date column
     df['date'] = pd.to_datetime(df['date'].apply(str), format='%Y%m%d')
@@ -60,9 +63,30 @@ def clean_dataframe(df, level):
     if level == 'state':
         df.rename(columns={'state': 'State',}, inplace=True)
 
-    # reorder columns for display
-    #df = df[COLS_REORDER]
-
+    # calculate normalized per 100k metrics
+    # positive per 100k
+    df['Positive per 100k, Cumulative'] = round(df['Positive, Cumulative']/df['Population']*100000, 1)
+    df['Positive per 100k, Daily Increase'] = round(df['Positive, Daily Increase']/df['Population']*100000, 1)
+    # negative per 100k
+    df['Negative per 100k, Cumulative'] = round(df['Negative, Cumulative']/df['Population']*100000, 1)
+    df['Negative per 100k, Daily Increase'] = round(df['Negative, Daily Increase']/df['Population']*100000, 1)
+    # total tested
+    df['Total Tested per 100k, Cumulative'] = round(df['Total Tested, Cumulative']/df['Population']*100000, 1)
+    df['Total Tested per 100k, Daily Increase'] = round(df['Total Tested, Daily Increase']/df['Population']*100000, 1)
+    # deaths
+    df['Deaths per 100k, Cumulative'] = round(df['Deaths, Cumulative']/df['Population']*100000, 1)
+    df['Deaths per 100k, Daily Increase'] = round(df['Deaths, Daily Increase']/df['Population']*100000, 1)
+    # recovered
+    df['Recovered per 100k, Cumulative'] = round(df['Recovered, Cumulative']/df['Population']*100000, 1) 
+    # hospitalized
+    df['Hospitalized per 100k, Cumulative'] = round(df['Hospitalized, Cumulative']/df['Population']*100000, 1)    
+    df['Hospitalized per 100k, Daily Increase'] = round(df['Hospitalized, Daily Increase']/df['Population']*100000, 1)
+    # in ICU
+    df['In ICU per 100k, Cumulative'] = round(df['In ICU, Cumulative']/df['Population']*100000, 1)    
+    df['In ICU per 100k, Currently'] = round(df['In ICU, Currently']/df['Population']*100000, 1)
+    # on ventilator
+    df['On Ventilator per 100k, Cumulative'] = round(df['On Ventilator, Cumulative']/df['Population']*100000, 1)    
+    df['On Ventilator per 100k, Currently'] = round(df['On Ventilator, Currently']/df['Population']*100000, 1)   
     return df
 
 ### POST-CALCULATION VARIABLES
