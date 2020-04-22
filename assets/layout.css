@@ -28,17 +28,17 @@ a {
 }
 
 .rc-slider-track {
-  background-color: #555555;
+  background-color: #999999;
 }
 
 .rc-slider-dot-active {  
-  border-color: #555555;
-  border: solid 2px #555555;
+  border-color: #999999;
+  border: solid 2px #999999;
 }
 
 .rc-slider-handle {
   background-color: #ffffff;
-  border: solid 2px #555555;
+  border: solid 2px #999999;
 }
 
 .rc.slider-handle-active:active {

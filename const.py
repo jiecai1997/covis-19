@@ -1,5 +1,22 @@
 ### CONSTANT VARIABLES
 
+# stock tickers
+INDEXES = {
+    '^IXIC': 'NASDAQ',
+    '^GSPC': 'S&P 500',
+    '^DJI': 'Dow Jones'
+}
+FAANGM = {
+    'FB': 'Facebook',
+    'AAPL': 'Apple',
+    'AMZN': 'Amazon',
+    'NFLX': 'Netflix',
+    'GOOG': 'Google',
+    'MSFT': 'Microsoft'
+}
+
+TICKERS = {**INDEXES, **FAANGM}
+
 # renaming columns in df
 COLS_RENAME = {
     # positive

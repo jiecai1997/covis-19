@@ -29,20 +29,20 @@ child = [
         ]
     ),
     html.Br(),
-    html.H5(children = '💊Overall Metrics'),
     html.P(
-        children = [html.A('Source', href = 'https://covidtracking.com/api'),
+        children = ['💊',html.A('Source', href = 'https://covidtracking.com/api'),
         ' updated ', LATEST_DATE.strftime('%Y/%m/%d'),
-        ', US only']
+        ', US cases only']
     ),
     html.Br(),
+    html.H5(children = 'Overall Metrics'),
     html.Div(
         className = 'row',
         children = [
             html.Div(
                 className = 'two columns',
                 children = [
-                    html.H1(html.Strong(id = 'federal-positive-info-today')),
+                    html.H2(html.Strong(id = 'federal-positive-info-today')),
                     html.Strong('Positive, Cumulative'),
                     html.Div(id = 'federal-positive-info-1d'),
                     html.Div(id = 'federal-positive-info-1w')
@@ -55,7 +55,7 @@ child = [
             html.Div(
                 className = 'two columns',
                 children = [
-                    html.H1(html.Strong(id = 'federal-deaths-info-today')),
+                    html.H2(html.Strong(id = 'federal-deaths-info-today')),
                     html.Strong('Deaths, Cumulative'),
                     html.Div(id = 'federal-deaths-info-1d'),
                     html.Div(id = 'federal-deaths-info-1w')
@@ -68,7 +68,7 @@ child = [
             html.Div(
                 className = 'two columns',
                 children = [
-                    html.H1(html.Strong(id = 'federal-recovered-info-today')),
+                    html.H2(html.Strong(id = 'federal-recovered-info-today')),
                     html.Strong('Recovered, Cumulative'),
                     html.Div(id = 'federal-recovered-info-1d'),
                     html.Div(id = 'federal-recovered-info-1w')
@@ -112,7 +112,6 @@ child = [
                         value = 'Positive, Cumulative'
                     ),
                     html.Br(),
-                    html.Br(),
                     # metric line graph
                     html.Div(
                         className = 'row',
@@ -120,7 +119,7 @@ child = [
                             html.Div(
                                 className = 'six columns',
                                 children = [
-                                    html.H1(html.Strong(id = 'federal-metric-info-today')),
+                                    html.H2(html.Strong(id = 'federal-metric-info-today')),
                                     html.Strong(id = 'metric-name-2'),
                                     html.Div(id = 'federal-metric-info-1d'),
                                     html.Div(id = 'federal-metric-info-1w'),
@@ -150,57 +149,6 @@ child = [
     dcc.Loading(dcc.Graph(id = 'metric-graph-individual-states'), color = '#222222', type = 'circle'),
 ]
 
-'''
-for i in range(17):
-    state1, state2, state3 = STATES[3*i], STATES[3*i+1], STATES[3*i+2]
-    new_div = html.Div(
-        className = 'row',
-        children = [
-            html.Div(
-                className = 'two columns',
-                children = [
-                    html.H3(html.Strong(id = f'{state1}-metric-info-today')),
-                    html.Strong(f'{state1}'), 
-                    html.Div(id = f'{state1}-metric-info-1d'),
-                    html.Div(id = f'{state1}-metric-info-1w')
-                ]
-            ),
-            html.Div(
-                className = 'two columns',
-                children = dcc.Loading(dcc.Graph(id = f'{state1}-metric-graph', style = gh), color = '#222222', type = 'circle')
-            ),
-            html.Div(
-                className = 'two columns',
-                children = [
-                    html.H3(html.Strong(id = f'{state2}-metric-info-today')),
-                    html.Strong(f'{state2}'), 
-                    html.Div(id = f'{state2}-metric-info-1d'),
-                    html.Div(id = f'{state2}-metric-info-1w')
-                ]
-            ),
-            html.Div(
-                className = 'two columns',
-                children = dcc.Loading(dcc.Graph(id = f'{state2}-metric-graph', style = gh), color = '#222222', type = 'circle')
-            ),
-            html.Div(
-                className = 'two columns',
-                children = [
-                    html.H3(html.Strong(id = f'{state3}-metric-info-today')),
-                    html.Strong(f'{state3}'), 
-                    html.Div(id = f'{state3}-metric-info-1d'),
-                    html.Div(id = f'{state3}-metric-info-1w')
-                ]
-            ),
-            html.Div(
-                className = 'two columns',
-                children = dcc.Loading(dcc.Graph(id = f'{state3}-metric-graph', style = gh), color = '#222222', type = 'circle')
-            )
-        ]
-    )
-    child.append(new_div)
-    child.append(html.Br())
-child.append(html.Br())
-'''
 child.append(html.Div(id = 'metric-table'))
 
 ### APP LAYOUT
@@ -499,27 +447,6 @@ def update_all_states_graph(days_since_d1, metric):
 )
 def update_individual_states_graph(days_since_d1, metric):
     return update_graph('all_states', metric, days_since_d1)
-
-'''
-##### states graph
-for state in STATES:
-    @app.callback(
-    [
-        Output(f'{state}-metric-info-today', 'children'), 
-        Output(f'{state}-metric-info-1d', 'children'),
-        Output(f'{state}-metric-info-1w', 'children'),
-    ],
-        [Input('metric-select', 'value'), Input('date-slider', 'value')]
-    )
-    def update_state_info(metric, days_since_d1, state = state):
-        return update_info(state, metric, days_since_d1)
-    @app.callback(
-        Output(f'{state}-metric-graph', 'figure'),
-        [Input('metric-select', 'value'), Input('date-slider', 'value')]
-    )
-    def update_state_graph(metric, days_since_d1, state = state):
-        return update_graph(state, metric, days_since_d1)
-'''
 
 ##### states table
 @app.callback(
