@@ -9,30 +9,28 @@ import dash_table.FormatTemplate as FormatTemplate
 
 from datetime import datetime, timedelta
 import math
+import yfinance as yf
 
 from data.finance import DF, EARLIEST_DATE, LATEST_DATE, DELTA_DAYS
-from const import INDEXES, FAANGM, TICKERS
+from const import INDICES, FAANGM, AIRLINES, TICKERS
+
+gh = {'height': '120px'}
 
 ### HELPER FUNCTIONS
 def subset_data(df, category):
     return df[df['Stock'].isin(category)]
 
-def ticker_info(days_since_ny, ticker):
-    #print('ticker info', ticker)
-    data = DF[(DF['Days Since NY'] == days_since_ny) & (DF['Stock'] == ticker)]
-    price_current = data['Close'].iloc[0]
-    price_delta_ytd = data['$ Delta YTD'].iloc[0]
-    perc_delta_ytd = data['% Delta YTD'].iloc[0]
-    plus = '+' if price_delta_ytd >= 0 else ''
-    output_price_current = f'${price_current:.2f}'
-    output_delta_ytd = f'YTD | {plus}${price_delta_ytd:.2f}, {plus}{perc_delta_ytd:.1f}%'
-    return output_price_current, output_delta_ytd
+def ytd_delta_output(price_delta, perc_delta):
+    plus_price = '+' if price_delta >= 0 else '-'
+    plus_perc = '+' if perc_delta >= 0 else ''
+    return (f'YTD | {plus_price}${abs(price_delta):.2f}, {plus_perc}{perc_delta:.1f}%')
         
 def industry_overall_view(industry):
-    tt = list(industry.keys())
+    tickers = list(industry.keys())
+    tickers_str_id = tickers[0]
     div = []
     for i in range(int(len(industry)/3)):
-        ticker1, ticker2, ticker3 = tt[3*i], tt[3*i+1], tt[3*i+2]
+        ticker1, ticker2, ticker3 = tickers[3*i], tickers[3*i+1], tickers[3*i+2]
         new_div = html.Div(
             className = 'row',
             children = [
@@ -47,7 +45,7 @@ def industry_overall_view(industry):
                 ),
                 html.Div(
                     className = 'two columns',
-                    children = 'placeholder'#dcc.Loading(dcc.Graph(id = f'{state1}-graph', style = gh), color = '#222222', type = 'circle')
+                    children = dcc.Loading(dcc.Graph(id = f'{ticker1}-graph', style = gh), color = '#222222', type = 'circle')
                 ),
                 html.Div(
                     className = 'two columns',
@@ -60,7 +58,7 @@ def industry_overall_view(industry):
                 ),
                 html.Div(
                     className = 'two columns',
-                    children = 'placeholder'#dcc.Loading(dcc.Graph(id = f'{state2}-metric-graph', style = gh), color = '#222222', type = 'circle')
+                    children = dcc.Loading(dcc.Graph(id = f'{ticker2}-graph', style = gh), color = '#222222', type = 'circle')
                 ),
                 html.Div(
                     className = 'two columns',
@@ -73,15 +71,303 @@ def industry_overall_view(industry):
                 ),
                 html.Div(
                     className = 'two columns',
-                    children = 'placeholder'#dcc.Loading(dcc.Graph(id = f'{state3}-metric-graph', style = gh), color = '#222222', type = 'circle')
+                    children = dcc.Loading(dcc.Graph(id = f'{ticker3}-graph', style = gh), color = '#222222', type = 'circle')
                 )
             ]
         ),
         div.append(new_div)
+    br = html.Br(),
+    div.append(br)
+    div.append(br)
+    industry_graph = dcc.Loading(dcc.Graph(id = f'{tickers_str_id}-industry-graph'), color = '#222222', type = 'circle'),
+    div.append(industry_graph)
     div = [item for sublist in div for item in sublist]
     return div
 
+### CALLBACKS
+##### date display
+@app.callback(
+    [Output('date-print', 'children'), Output('ytd-print', 'children')],
+    [Input('date-slider', 'value')]
+)
+def update_dates_display(days_since_d1):
+    date_output = f'{(EARLIEST_DATE + timedelta(days=days_since_d1)).strftime("%Y/%m/%d")}'
+    days_since_d1_output = f'{days_since_d1} day(s) YTD.'
+    return date_output, days_since_d1_output
+
+def ticker_display(ticker):
+    # ticker price and delta info
+    @app.callback(
+        [Output(f'{ticker}-current', 'children'), Output(f'{ticker}-ytd', 'children')],
+        [Input('date-slider', 'value')]
+    )
+    def ticker_info(days_since_ny):
+        data = DF[(DF['Days Since NY'] == days_since_ny) & (DF['Stock'] == ticker)]
+        price_current = data['Close'].iloc[0]
+        price_delta = data['$ Delta YTD'].iloc[0]
+        perc_delta = data['% Delta YTD'].iloc[0]
+        output_delta = ytd_delta_output(price_delta, perc_delta)
+        output_price_current = f'${price_current:.2f}'
+        return output_price_current, output_delta
+
+    # ticker graph
+    @app.callback(
+        Output(f'{ticker}-graph', 'figure'),
+        [Input('date-slider', 'value')]
+    )
+    def ticker_graph(days_since_ny):
+        data = DF[(DF['Days Since NY'] <= days_since_ny) & (DF['Stock'] == ticker)]
+        latest_price = data[data['Date'] == max(data['Date'])]['Close'].iloc[0]
+        earliest_price = data[data['Date'] == min(data['Date'])]['Close'].iloc[0]
+        fig = px.line(
+            data,
+            x='Date',
+            y='% Delta YTD',
+            hover_name = 'Company',
+            hover_data=['$ Delta YTD', 'Close', 'Stock'],
+            color_discrete_sequence= ['#54A24B'] if latest_price >= earliest_price else ['#E45756'],
+            template = 'plotly_white',
+            height = 120
+        )
+        fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+        fig.update_xaxes(showgrid=False, zeroline=False)
+        fig.update_yaxes(showgrid=False, zeroline=False)
+        fig.update_xaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
+        fig.update_yaxes(showticklabels=False, visible=False, tickfont=dict(size=1))
+        return fig
+
+for ticker in list(TICKERS.keys()):
+    ticker_display(ticker)
+
+#### industry graph
+def industry_graph_display(industry):
+    industry_str_id = list(industry.keys())[0]
+    @app.callback(
+        Output(f'{industry_str_id}-industry-graph', 'figure'),
+        [Input('date-slider', 'value')]
+    )
+    def industry_graph(days_since_ny):
+        data = DF[(DF['Days Since NY'] <= days_since_ny) & (DF['Stock'].isin(industry.keys()))]
+        latest_day = max((data['Date']))
+        fig = px.line(
+            data,
+            x='Date',
+            y='% Delta YTD',
+            color='Stock',
+            color_discrete_sequence = px.colors.qualitative.Antique,
+            hover_name = 'Company',
+            hover_data=['$ Delta YTD', 'Close', 'Stock'],
+            template = 'plotly_white',
+            height = 600
+        )
+        fig.update_layout(legend_orientation="h", legend=dict(x=-.1, y=1.1))
+        for i, row in data[data['Date'] == latest_day].iterrows():
+            plus = '+' if row['% Delta YTD'] >= 0 else ''
+            fig.add_annotation(x=row['Date'], y=row['% Delta YTD'], text=f"{row['Stock']} {plus}{round(row['% Delta YTD'], 1)}%")
+        
+        if latest_day >= datetime.strptime('2020-01-21', '%Y-%m-%d'):
+            fig.add_shape(dict(type="line", x0='2020-01-21', y0=min(data['% Delta YTD']), x1='2020-01-21', y1=max(data['% Delta YTD'])+5, 
+                            line=dict(color='Black', width=0.1, dash="dot")))
+            fig.add_annotation(x='2020-01-21', y=max(data['% Delta YTD'])+6, text='01/21 - 1st US COVID-19 Case')
+
+        if latest_day >= datetime.strptime('2020-02-19', '%Y-%m-%d'):
+            fig.add_shape(dict(type="line", x0='2020-02-19', y0=min(data['% Delta YTD']), x1='2020-02-19', y1=max(data['% Delta YTD'])+5, 
+                            line=dict(color='Black', width=0.1, dash="dot")))
+            fig.add_annotation(x='2020-02-19', y=max(data['% Delta YTD'])+6, text='02/19 - Market Record High')
+
+        if latest_day >= datetime.strptime('2020-02-28', '%Y-%m-%d'):
+            fig.add_shape(dict(type="line", x0='2020-02-28', y0=min(data['% Delta YTD']), x1='2020-02-28', y1=max(data['% Delta YTD'])-1, 
+                            line=dict(color='Black', width=0.1, dash="dot")))
+            fig.add_annotation(x='2020-02-28', y=max(data['% Delta YTD'])+3, text='02/28 - 1st US COVID-19 Death')
+            fig.add_annotation(x='2020-02-28', y=max(data['% Delta YTD']), text='02/28 - Market Correction (-10%)')
+
+        if latest_day >= datetime.strptime('2020-03-09', '%Y-%m-%d'):
+            fig.add_shape(dict(type="line", x0='2020-03-09', y0=min(data['% Delta YTD']), x1='2020-03-09', y1=max(data['% Delta YTD'])-4, 
+                            line=dict(color='Black', width=0.1, dash="dot")))
+            fig.add_annotation(x='2020-03-09', y=max(data['% Delta YTD'])-3, text='03/09 - Bear Market (-20%)')
+
+        fig.update_annotations(dict(xref="x", yref="y", showarrow=True, arrowhead=7, ax=60, ay=0))
+        fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+        fig.update_xaxes(showgrid=False, zeroline=False)
+        fig.update_yaxes(showgrid=True, zeroline=True, zerolinewidth=0.05, zerolinecolor='Gray')
+        return fig
+
+for industry in [INDICES, FAANGM, AIRLINES]:
+    industry_graph_display(industry)
+
+def custom_stock_df(ticker, end_date):
+    df = yf.download(str.upper(ticker), start='2020-01-01', end=end_date).reset_index()
+    if not df.empty:
+        name = yf.Ticker(ticker).info['shortName'].split()
+        name = ' '.join(name[:2]) if len(name) > 3 else name[0]
+        df['Stock'] = ticker
+        df['Company'] = name
+        initial = df[df['Date'] == min(df['Date'])]['Close'][0]
+        df['$ Delta YTD'] = (df['Close'] - initial)
+        df['% Delta YTD'] = ((df['Close'] - initial)/initial)*100
+        df = df.round({'Open': 2, 'High': 2, 'Low':2, 'Close':2, 'Adj Close':2, '$ Delta YTD':2, '% Delta YTD':1})
+    return df
+
+def custom_stock_info(ticker):
+    name = yf.Ticker(ticker).info['shortName']
+    if ' ' in name:
+        name = name.split()
+        name = ' '.join(name[:2]) if len(name) > 3 else name[0]
+    return f'{name} ({ticker})'
+
+# custom stock vs market
+@app.callback(
+    Output('custom-stock-info', 'children'),
+    [Input('custom-stock-input', 'value'), Input('date-slider', 'value')]
+)
+def custom_stock_output(ticker, days_since_ny):
+    end_date = (datetime.strptime('2020-01-01', '%Y-%m-%d') + timedelta(days_since_ny)).strftime('%Y-%m-%d')
+    df = custom_stock_df(ticker, end_date)
+    if df.empty:
+        return 'Invalid Stock Ticker'
+    else:
+        return custom_stock_info(ticker)
+
+@app.callback(
+    [
+        Output('custom-stock-price', 'children'),
+        Output('custom-stock-info-2', 'children'),
+        Output('custom-stock-ytd', 'children')
+    ],
+    [Input('custom-stock-input', 'value'), Input('date-slider', 'value')]
+)
+def custom_stock_price(ticker, days_since_ny):
+    end_date = (datetime.strptime('2020-01-01', '%Y-%m-%d') + timedelta(days_since_ny)).strftime('%Y-%m-%d')
+    df = custom_stock_df(ticker, end_date)
+    if df.empty:
+        return '-', 'Invalid Stock Ticker', '-'
+    else:
+        info = custom_stock_info(ticker)
+        df_today = df[df['Date'] == max(df['Date'])]
+        price = df_today['Close'].iloc[0]
+        output_price = f'${price:.2f}'
+        price_delta = df_today['$ Delta YTD'].iloc[0]
+        perc_delta = df_today['% Delta YTD'].iloc[0]
+        output_delta = ytd_delta_output(price_delta, perc_delta)
+        return output_price, info, output_delta
+
+@app.callback(
+    Output('custom-stock-graph', 'figure'),
+    [Input('custom-stock-input', 'value'), Input('date-slider', 'value')]
+)
+def custom_stock_graph(ticker, days_since_ny):
+    end_date = (datetime.strptime('2020-01-01', '%Y-%m-%d') + timedelta(days_since_ny)).strftime('%Y-%m-%d')
+    data = custom_stock_df(ticker, end_date)
+    if data.empty:
+        fig = px.line(
+            [[0,0], [1,1]],
+            template = 'plotly_white',
+            height = 120
+        )
+    else:
+        latest_price = data[data['Date'] == max(data['Date'])]['Close'].iloc[0]
+        earliest_price = data[data['Date'] == min(data['Date'])]['Close'].iloc[0]
+        fig = px.line(
+            data,
+            x='Date',
+            y='% Delta YTD',
+            hover_name = 'Company',
+            hover_data=['$ Delta YTD', 'Close', 'Stock'],
+            color_discrete_sequence= ['#54A24B'] if latest_price >= earliest_price else ['#E45756'],
+            template = 'plotly_white',
+            height = 120
+        )
+    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+    fig.update_xaxes(showgrid=False, zeroline=False)
+    fig.update_yaxes(showgrid=False, zeroline=False)
+    fig.update_xaxes(showticklabels=False, visible = False, tickfont=dict(size=1))
+    fig.update_yaxes(showticklabels=False, visible=False, tickfont=dict(size=1))
+    return fig
+
+# index display vs custom
+def ticker_display_custom(ticker):
+    # ticker price and delta info
+    @app.callback(
+        [Output(f'{ticker}-info-custom', 'children'), Output(f'{ticker}-ytd-custom', 'children')],
+        [Input('date-slider', 'value')]
+    )
+    def ticker_info(days_since_ny):
+        name = INDICES[ticker]
+        data = DF[(DF['Days Since NY'] == days_since_ny) & (DF['Stock'] == ticker)]
+        price_delta = data['$ Delta YTD'].iloc[0]
+        perc_delta = data['% Delta YTD'].iloc[0]
+        output_delta = ytd_delta_output(price_delta, perc_delta)
+        info = f'{name} ({ticker})'
+        return info, output_delta
+
+for ticker in INDICES.keys():
+    ticker_display_custom(ticker)
+
+### LAYOUT
 child = [
+    html.H5('Custom Stock'),
+    html.Br(),
+    html.Div(
+        className = 'row',
+        children = [
+            html.Div(
+                className = 'four columns',
+                children = [
+                    html.P(html.B(id = 'custom-stock-info')),
+                    dcc.Input(
+                        id = 'custom-stock-input',
+                        type = 'text',
+                        debounce=True,
+                        value = 'ZM'
+                    ),
+                    html.P('Type in a custom stock & press enter.'),
+                    html.P('Compare the custom stock\'s performance (% Delta YTD) to market average via. key indices.'),
+                ]
+            ),
+            html.Div(
+                className = 'eight columns',
+                children = [
+                    html.Div(
+                        className = 'row',
+                        children = [
+                            html.Div(
+                                className = 'three columns',
+                                children = [
+                                    html.H2(html.B(id = 'custom-stock-price')),
+                                    html.B(id = 'custom-stock-info-2'),
+                                    dcc.Loading(html.P(id = 'custom-stock-ytd', style = {'height':'20px'}), color = '#222222', type = 'circle'),
+                                ]
+                            ),
+                            html.Div(
+                                className = 'three columns',
+                                children = dcc.Graph(id = 'custom-stock-graph')
+                            ),
+                            html.Div(
+                                className = 'six columns',
+                                children = [
+                                    html.Div(html.B(id = '^IXIC-info-custom')),
+                                    dcc.Loading(html.P(id = '^IXIC-ytd-custom', style = {'height':'20px'}), color = '#222222', type = 'circle'),
+                                    html.Div(html.B(id = '^GSPC-info-custom')),
+                                    dcc.Loading(html.P(id = '^GSPC-ytd-custom', style = {'height':'20px'}), color = '#222222', type = 'circle'),
+                                    html.Div(html.B(id = '^DJI-info-custom')),
+                                    dcc.Loading(html.P(id = '^DJI-ytd-custom', style = {'height':'20px'}), color = '#222222', type = 'circle'),
+                                ]
+                            )
+                        ]
+                    ), 
+                    html.Hr(),
+                ]
+            ),
+            html.Div(
+                className = 'four columns',
+                children = 'placeholder'
+            ),
+        ]
+    ),
+    
+    
+    ### put this last after test
+    ###
     # navigation bar
     html.Ul(
         className = 'topnav',
@@ -97,30 +383,45 @@ child = [
     html.P(
         children = ['💵',html.A('Source', href = 'https://github.com/ranaroussi/yfinance'),
         ' updated ', LATEST_DATE.strftime('%Y/%m/%d'),
-        ', US market only']
+        ', US market EOD closing prices only.']
     ),
     html.Br(),
     html.H5('Date'),
-    html.Strong(id = 'date-print'),
-    html.P(id='ytd-print'),
-    dcc.Slider(
-        id = 'date-slider',
-        min = 0,
-        max = DELTA_DAYS,
-        marks = {i:(EARLIEST_DATE + timedelta(days=i)).strftime('%Y/%m/%d') \
-            for i in range(int(DELTA_DAYS/8), (DELTA_DAYS+1-int(DELTA_DAYS/8)), int(DELTA_DAYS/4))},
-        value = DELTA_DAYS
+    html.Div(
+        className = 'row',
+        children = [
+            html.Div(
+                className = 'two columns',
+                children = [
+                    html.Strong(id = 'date-print'),
+                    html.P(id='ytd-print')
+                ]
+            ),
+            html.Div(
+                className = 'ten columns',
+                children = [
+                    dcc.Slider(
+                        id = 'date-slider',
+                        min = 0,
+                        max = DELTA_DAYS,
+                        marks = {i:(EARLIEST_DATE + timedelta(days=i)).strftime('%Y/%m/%d') \
+                            for i in range(int(DELTA_DAYS/8), (DELTA_DAYS+1-int(DELTA_DAYS/8)), int(DELTA_DAYS/4))},
+                        value = DELTA_DAYS
+                    ),
+                ]
+            )
+        ]
     ),
     html.Hr(),
-    html.H5('Key Indexes'),
-    html.Div(industry_overall_view(INDEXES)),
-    html.Br(),
+    html.H5('Key Indices'),
+    html.Div(industry_overall_view(INDICES)),
+    html.Hr(),
     html.H5('FAANG + Microsoft'),
     html.Div(industry_overall_view(FAANGM)),
-    html.Br(),
+    html.Hr(),
     html.H5('Airlines'),
-    html.Br(),
-    dcc.Loading(dcc.Graph(id = 'graph'), color = '#222222', type = 'circle')
+    html.Div(industry_overall_view(AIRLINES)),
+    html.Hr(),
     #html.Div(output)
 ]
 
@@ -129,78 +430,3 @@ layout = html.Div(
     className = 'container',
     children = child
 )
-
-### CALLBACKS
-##### date display
-@app.callback(
-    [Output('date-print', 'children'), Output('ytd-print', 'children')],
-    [Input('date-slider', 'value')]
-)
-def update_dates_display(days_since_d1):
-    date_output = f'{(EARLIEST_DATE + timedelta(days=days_since_d1)).strftime("%Y/%m/%d")}'
-    days_since_d1_output = f'{days_since_d1} day(s) YTD since 2020-01-01.'
-    return date_output, days_since_d1_output
-
-def a(ticker):
-    @app.callback(
-        [Output(f'{ticker}-current', 'children'), Output(f'{ticker}-ytd', 'children')],
-        [Input('date-slider', 'value')]
-    )
-    def return_ticker_info(days_since_ny):
-        print('inner loop callback', ticker) # broken here [4,4,4,4]
-        return ticker_info(days_since_ny = days_since_ny, ticker = ticker)
-
-for ticker in list(TICKERS.keys()):
-    print('outer loop callback', ticker) # fine here [1,2,3,4]
-    a(ticker)
-
-##### graph
-@app.callback(
-    Output('graph', 'figure'),
-    [Input('date-slider', 'value')]
-)
-def FAANG_graph(days_since_ny):
-    data = DF[DF['Days Since NY'] <= days_since_ny]
-    latest_day = max((data['Date']))
-    fig = px.line(
-        data,
-        x='Date',
-        y='% Delta YTD',
-        color='Stock',
-        color_discrete_sequence = px.colors.qualitative.T10,
-        hover_name = 'Stock',
-        hover_data=['$ Delta YTD', 'Close'],
-        template = 'plotly_white',
-        height = 600
-    )
-    fig.update_layout(legend_orientation="h", legend=dict(x=-.1, y=1.1))
-    for i, row in data[data['Date'] == latest_day].iterrows():
-        plus = '+' if row['% Delta YTD'] >= 0 else ''
-        fig.add_annotation(x=row['Date'], y=row['% Delta YTD'], text=f"{row['Stock']} {plus}{round(row['% Delta YTD'], 1)}%")
-    
-    if latest_day >= datetime.strptime('2020-01-21', '%Y-%m-%d'):
-        fig.add_shape(dict(type="line", x0='2020-01-21', y0=min(data['% Delta YTD']), x1='2020-01-21', y1=max(data['% Delta YTD'])+3, 
-                        line=dict(color='Black', width=0.1, dash="dot")))
-        fig.add_annotation(x='2020-01-21', y=max(data['% Delta YTD'])+4, text='01/21 - 1st US COVID-19 Case')
-
-    if latest_day >= datetime.strptime('2020-02-19', '%Y-%m-%d'):
-        fig.add_shape(dict(type="line", x0='2020-02-19', y0=min(data['% Delta YTD']), x1='2020-02-19', y1=max(data['% Delta YTD'])+1, 
-                        line=dict(color='Black', width=0.1, dash="dot")))
-        fig.add_annotation(x='2020-02-19', y=max(data['% Delta YTD'])+2, text='02/19 - Market Record High')
-
-    if latest_day >= datetime.strptime('2020-02-28', '%Y-%m-%d'):
-        fig.add_shape(dict(type="line", x0='2020-02-28', y0=min(data['% Delta YTD']), x1='2020-02-28', y1=max(data['% Delta YTD'])-3, 
-                        line=dict(color='Black', width=0.1, dash="dot")))
-        fig.add_annotation(x='2020-02-28', y=max(data['% Delta YTD']), text='02/28 - 1st US COVID-19 Death')
-        fig.add_annotation(x='2020-02-28', y=max(data['% Delta YTD'])-2, text='02/28 - Market Correction (-10%)')
-
-    if latest_day >= datetime.strptime('2020-03-09', '%Y-%m-%d'):
-        fig.add_shape(dict(type="line", x0='2020-03-09', y0=min(data['% Delta YTD']), x1='2020-03-09', y1=max(data['% Delta YTD'])-5, 
-                        line=dict(color='Black', width=0.1, dash="dot")))
-        fig.add_annotation(x='2020-03-09', y=max(data['% Delta YTD'])-4, text='03/09 - Bear Market (-20%)')
-
-    fig.update_annotations(dict(xref="x", yref="y", showarrow=True, arrowhead=7, ax=60, ay=0))
-    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
-    fig.update_xaxes(showgrid=False, zeroline=False)
-    fig.update_yaxes(showgrid=True, zeroline=True, zerolinewidth=0.05, zerolinecolor='Gray')
-    return fig

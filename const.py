@@ -1,7 +1,7 @@
 ### CONSTANT VARIABLES
 
 # stock tickers
-INDEXES = {
+INDICES = {
     '^IXIC': 'NASDAQ',
     '^GSPC': 'S&P 500',
     '^DJI': 'Dow Jones'
@@ -14,8 +14,16 @@ FAANGM = {
     'GOOG': 'Google',
     'MSFT': 'Microsoft'
 }
+AIRLINES = {
+    'AAL': 'American',
+    'DAL': 'Delta',
+    'LUV': 'Southwest',
+    'UAL': 'United',
+    'ALK': 'Alaska',
+    'JBLU': 'JetBlue'
+}
 
-TICKERS = {**INDEXES, **FAANGM}
+TICKERS = {**INDICES, **FAANGM, **AIRLINES}
 
 # renaming columns in df
 COLS_RENAME = {

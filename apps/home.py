@@ -14,7 +14,7 @@ from data.health import DF_STATES, STATES, DF_FEDERAL, DELTA_DAYS, EARLIEST_DATE
 from const import METRIC_SELECT_OPTIONS, METRIC_DEFINITIONS
 from datetime import datetime, timedelta
 
-gh = {'height': '100px'}
+gh = {'height': '120px'}
 
 child = [
     # navigation bar
@@ -32,7 +32,7 @@ child = [
     html.P(
         children = ['💊',html.A('Source', href = 'https://covidtracking.com/api'),
         ' updated ', LATEST_DATE.strftime('%Y/%m/%d'),
-        ', US cases only']
+        ', US COVID-19 cases only.']
     ),
     html.Br(),
     html.H5(children = 'Overall Metrics'),
@@ -232,7 +232,7 @@ def update_graph(state, metric, days_since_d1):
                 line_group = 'State' if state == 'all' else None,
                 color = 'Top 3 States' if state == 'all' else None,
                 template = 'plotly_white',
-                color_discrete_sequence = ['rgb(222, 222, 222)', 'rgb(228, 26, 28)'] if state == 'all' else ['rgb(228, 26, 28)'],
+                color_discrete_sequence = ['#E2E2E2', '#E45756'] if state == 'all' else ['#E45756'],
                 category_orders={'Top 3 States': [0, 1]},
                 hover_name= 'State' if state == 'all' else None,
                 height = 120 if state != 'all' else 600,
@@ -246,8 +246,8 @@ def update_graph(state, metric, days_since_d1):
                 hover_name= 'State',
                 facet_col = 'State',
                 facet_col_wrap = 6,
-                color_discrete_sequence = ['rgb(228, 26, 28)'],
-                height = 2400,
+                color_discrete_sequence = ['#E45756'],
+                height = 2600,
                 template = 'plotly_white'
         )
         fig.update_yaxes(matches=None)

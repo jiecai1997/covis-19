@@ -7,7 +7,7 @@ import yfinance as yf
 from datetime import datetime, timedelta
 
 from data.health import LATEST_DATE
-from const import INDEXES, FAANGM, TICKERS
+from const import INDICES, FAANGM, AIRLINES, TICKERS
 
 EARLIEST_DATE = datetime.strptime('2020-01-01', '%Y-%m-%d')
 DELTA_DAYS = (LATEST_DATE - EARLIEST_DATE).days
@@ -17,7 +17,6 @@ DF = pd.DataFrame(columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Adj Close'
 for t in TICKERS.keys():
     df = yf.download(t, start='2020-01-01').reset_index()
     df['Stock'] = t
-    df['% Delta 1D'] = df['Close'].pct_change()
     initial = df[df['Date'] == min(df['Date'])]['Close'][0]
     df['$ Delta YTD'] = (df['Close'] - initial)
     df['% Delta YTD'] = ((df['Close'] - initial)/initial)*100
