@@ -198,10 +198,10 @@ for industry in [INDICES, FAANGM, AIRLINES]:
 def custom_stock_df(ticker, end_date):
     df = yf.download(str.upper(ticker), start='2020-01-01', end=end_date).reset_index()
     if not df.empty:
-        name = yf.Ticker(ticker).info['shortName'].split()
-        name = ' '.join(name[:2]) if len(name) > 3 else name[0]
+        #name = yf.Ticker(ticker).info['shortName'].split()
+        #name = ' '.join(name[:2]) if len(name) > 3 else name[0]
         df['Stock'] = ticker
-        df['Company'] = name
+        #df['Company'] = name
         initial = df[df['Date'] == min(df['Date'])]['Close'][0]
         df['$ Delta YTD'] = (df['Close'] - initial)
         df['% Delta YTD'] = ((df['Close'] - initial)/initial)*100
@@ -209,11 +209,13 @@ def custom_stock_df(ticker, end_date):
     return df
 
 def custom_stock_info(ticker):
+    '''
     name = yf.Ticker(ticker).info['shortName']
     if ' ' in name:
         name = name.split()
         name = ' '.join(name[:2]) if len(name) > 3 else name[0]
-    return f'{name} ({ticker})'
+    '''
+    return f'{ticker}'
 
 # custom stock vs market
 @app.callback(
@@ -271,7 +273,7 @@ def custom_stock_graph(ticker, days_since_ny):
             data,
             x='Date',
             y='% Delta YTD',
-            hover_name = 'Company',
+            hover_name = 'Stock',
             hover_data=['$ Delta YTD', 'Close', 'Stock'],
             color_discrete_sequence= ['#54A24B'] if latest_price >= earliest_price else ['#E45756'],
             template = 'plotly_white',
