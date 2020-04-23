@@ -264,7 +264,7 @@ def update_graph(state, metric, days_since_d1):
         fig.update_layout(showlegend=False)
         data_top = data.sort_values(by=['Date', metric], ascending=False).head(3).reset_index()
         for i, row in data_top.iterrows():
-            fig.add_annotation(x=row['Date'], y=math.log10(row[metric]), text=f'#{i+1} {row["State"]}')
+            fig.add_annotation(x=row['Date'], y=math.log10(row[metric]+0.001), text=f'#{i+1} {row["State"]}')
         # add descriptive info
         max_v = max(data[metric])
         min_v = -1/math.log10(max_v/10)
