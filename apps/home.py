@@ -262,28 +262,34 @@ def update_graph(state, metric, days_since_d1):
     if state == 'all':
         # add state info
         fig.update_layout(showlegend=False)
+        fig.update_xaxes(showgrid=False)
         data_top = data.sort_values(by=['Date', metric], ascending=False).head(3).reset_index()
         for i, row in data_top.iterrows():
             fig.add_annotation(x=row['Date'], y=math.log10(row[metric]+0.001), text=f'#{i+1} {row["State"]}')
         # add descriptive info
         max_v = max(data[metric])
         min_v = -1/math.log10(max_v/10)
-        fig.update_yaxes(range=[min_v, math.log10(max_v*2)])
+        fig.update_yaxes(range=[min_v, math.log10(max_v*6)])
+        # first case
+        if max(data['Date']) >= '2020-01-21':
+            fig.add_shape(dict(type="line", x0='2020-01-21', y0=min_v, x1='2020-01-21', y1=max_v*.9, 
+                    line=dict(color='Grey', width=0.1, dash="dot")))
+            fig.add_annotation(x='2020-01-21', y=math.log10(max_v), text='1/21 - 1st US COVID-19 Case')
         # first death
         if max(data['Date']) >= '2020-02-28':
-            fig.add_shape(dict(type="line", x0='2020-02-28', y0=min_v, x1='2020-02-28', y1=max_v, 
+            fig.add_shape(dict(type="line", x0='2020-02-28', y0=min_v, x1='2020-02-28', y1=max_v*.9, 
                     line=dict(color='Grey', width=0.1, dash="dot")))
             fig.add_annotation(x='2020-02-28', y=math.log10(max_v), text='2/28 - 1st US COVID-19 Death')
         # state of emergency
         if max(data['Date']) >= '2020-03-13':
-            fig.add_shape(dict(type="line", x0='2020-03-13', y0=min_v, x1='2020-03-13', y1=max_v, 
+            fig.add_shape(dict(type="line", x0='2020-03-13', y0=min_v, x1='2020-03-13', y1=max_v*1.8, 
                     line=dict(color='Grey', width=0.1, dash="dot")))
-            fig.add_annotation(x='2020-03-13', y=math.log10(max_v), text='3/13 - State of Emergency Decleared')
+            fig.add_annotation(x='2020-03-13', y=math.log10(max_v*(2)), text='3/13 - State of Emergency Decleared')
         # US becomes number 1 in cases
         if max(data['Date']) >= '2020-03-26':
-            fig.add_shape(dict(type="line", x0='2020-03-26', y0=min_v, x1='2020-03-26', y1=max_v, 
+            fig.add_shape(dict(type="line", x0='2020-03-26', y0=min_v, x1='2020-03-26', y1=max_v*3.6, 
                 line=dict(color='Grey', width=0.1, dash="dot")))
-            fig.add_annotation(x='2020-03-26', y=math.log10(max_v), text='3/26 - US Leads in COVID-19 Cases')
+            fig.add_annotation(x='2020-03-26', y=math.log10(max_v*4), text='3/26 - US Leads in COVID-19 Cases')
         # style
         fig.update_annotations(dict(xref="x", yref="y", showarrow=True, arrowhead=7, ax=50, ay=0))
     return fig
@@ -371,7 +377,7 @@ def update_federal_recovered_graph(days_since_d1):
 )
 def update_dates_display(days_since_d1):
     date_output = f'{(EARLIEST_DATE + timedelta(days=days_since_d1)).strftime("%Y/%m/%d")}'
-    days_since_d1_output = f'{days_since_d1} day(s) since first US COVID-19 death.'
+    days_since_d1_output = f'{days_since_d1} day(s) since first US COVID-19 case.'
     return date_output, days_since_d1_output
 
 ##### metric selection
@@ -470,7 +476,7 @@ def update_netric_table(days_since_d1, metric):
         data = da,
         sort_action='native',
         filter_action='native',
-        style_cell={'fontSize':15, 'font-family':'sans-serif', 'textAlign': 'left', 'padding':'10px'},
+        style_cell={'fontSize':15, 'font-family':'sans-serif', 'textAlign': 'left', 'padding':'8px'},
         style_header={'backgroundColor': 'white', 'fontWeight': 'bold'},
         style_as_list_view=True,
     )
