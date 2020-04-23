@@ -449,14 +449,15 @@ child = [
     html.Div(industry_overall_view(AIRLINES)),
     html.Br(),
     html.Hr(),
-    html.H5('Custom Stock'),
+    html.H5('Custom Stock vs Market Average'),
     html.Br(),
     html.Div(
         className = 'row',
         children = [
             html.Div(
-                className = 'four columns',
+                className = 'six columns',
                 children = [
+                    html.Br(),
                     html.P(html.B(id = 'custom-vs-market-result')),
                     html.P('Type stock ticker + press enter'),
                     dcc.Input(
@@ -465,17 +466,17 @@ child = [
                         debounce=True,
                         value = 'ZM'
                     ),
-                    html.P('Compare the custom stock\'s performance (% Delta YTD) to market average via. key indices.'),
+                    #html.P('Compare the custom stock\'s performance (% Delta YTD) to market average via. key indices.'),
                 ]
             ),
             html.Div(
-                className = 'eight columns',
+                className = 'six columns',
                 children = [
                     html.Div(
                         className = 'row',
                         children = [
                             html.Div(
-                                className = 'three columns',
+                                className = 'four columns',
                                 children = [
                                     html.H2(html.B(id = 'custom-stock-price')),
                                     html.B(id = 'custom-stock-info-2'),
@@ -483,11 +484,11 @@ child = [
                                 ]
                             ),
                             html.Div(
-                                className = 'three columns',
+                                className = 'four columns',
                                 children = dcc.Loading(dcc.Graph(id = 'custom-stock-graph', style = gh), color = '#222222', type = 'circle'),
                             ),
                             html.Div(
-                                className = 'six columns',
+                                className = 'four columns',
                                 children = [
                                     html.Div(html.B(id = '^IXIC-info-custom')),
                                     dcc.Loading(html.P(id = '^IXIC-ytd-custom', style = {'height':'20px'}), color = '#222222', type = 'circle'),
@@ -506,8 +507,6 @@ child = [
     html.Br(),
     html.Br(),
     dcc.Loading(dcc.Graph('custom-vs-market-graph', style = gh), color = '#222222', type = 'circle'),
-    html.Br(),
-    html.Br(),
     #html.Div(output)
 ]
 
