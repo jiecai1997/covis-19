@@ -102,7 +102,8 @@ def ticker_display(ticker):
         [Input('date-slider', 'value')]
     )
     def ticker_info(days_since_ny):
-        data = DF[(DF['Days Since NY'] == days_since_ny) & (DF['Stock'] == ticker)]
+        data = DF[(DF['Days Since NY'] <= days_since_ny) & (DF['Stock'] == ticker)]
+        data = data[data['Days Since NY'] == max(data['Days Since NY'])]
         price_current = data['Close'].iloc[0]
         price_delta = data['$ Delta YTD'].iloc[0]
         perc_delta = data['% Delta YTD'].iloc[0]
@@ -247,7 +248,8 @@ def custom_stock_price(ticker, days_since_ny):
         return '-', 'Invalid Stock Ticker', '-'
     else:
         info = custom_stock_info(ticker)
-        df_today = df[df['Days Since NY'] == days_since_ny]
+        data = df[df['Days Since NY'] <= days_since_ny]
+        df_today = data[data['Days Since NY'] == max(data['Days Since NY'])]
         price = df_today['Close'].iloc[0]
         output_price = f'${price:.2f}'
         price_delta = df_today['$ Delta YTD'].iloc[0]
@@ -261,6 +263,7 @@ def custom_stock_price(ticker, days_since_ny):
 )
 def custom_stock_graph(ticker, days_since_ny):
     data = custom_stock_df(ticker)
+    data = data[data['Days Since NY'] <= days_since_ny]
     if data.empty:
         fig = px.line(
             [[0,0], [1,1]],
@@ -268,7 +271,7 @@ def custom_stock_graph(ticker, days_since_ny):
             height = 120
         )
     else:
-        latest_price = data[data['Days Since NY'] == days_since_ny]['Close'].iloc[0]
+        latest_price = data[data['Days Since NY'] == max(data['Days Since NY'])]['Close'].iloc[0]
         earliest_price = data[data['Days Since NY'] == min(data['Days Since NY'])]['Close'].iloc[0]
         fig = px.line(
             data,
@@ -296,7 +299,8 @@ def ticker_display_custom(ticker):
     )
     def ticker_info(days_since_ny):
         name = INDICES[ticker]
-        data = DF[(DF['Days Since NY'] == days_since_ny) & (DF['Stock'] == ticker)]
+        data = DF[(DF['Days Since NY'] <= days_since_ny) & (DF['Stock'] == ticker)]
+        data = data[data['Days Since NY'] == max(data['Days Since NY'])]
         price_delta = data['$ Delta YTD'].iloc[0]
         perc_delta = data['% Delta YTD'].iloc[0]
         output_delta = ytd_delta_output(price_delta, perc_delta)
@@ -313,13 +317,15 @@ for ticker in INDICES.keys():
 )
 def custom_vs_market_result(ticker, days_since_ny):
     df = custom_stock_df(ticker)
+    df = df[df['Days Since NY'] <= days_since_ny]
+    DF_TEMP = DF[DF['Days Since NY'] <= days_since_ny]
     if df.empty:
         return '🤷🏻‍♀️Invalid Stock Ticker'
     
-    custom_perc_delta = df[df['Days Since NY'] == days_since_ny]['% Delta YTD'].iloc[0]
-    nasdaq_perc_delta = DF[(DF['Days Since NY'] == days_since_ny) & (DF['Stock'] == '^IXIC')]['% Delta YTD'].iloc[0]
-    sp500_perc_delta = DF[(DF['Days Since NY'] == days_since_ny) & (DF['Stock'] == '^GSPC')]['% Delta YTD'].iloc[0]
-    dow_perc_delta = DF[(DF['Days Since NY'] == days_since_ny) & (DF['Stock'] == '^DJI')]['% Delta YTD'].iloc[0]
+    custom_perc_delta = df[df['Days Since NY'] == max(df['Days Since NY'])]['% Delta YTD'].iloc[0]
+    nasdaq_perc_delta = DF_TEMP[(DF_TEMP['Days Since NY'] == max(DF_TEMP['Days Since NY'])) & (DF_TEMP['Stock'] == '^IXIC')]['% Delta YTD'].iloc[0]
+    sp500_perc_delta = DF_TEMP[(DF_TEMP['Days Since NY'] == max(DF_TEMP['Days Since NY'])) & (DF_TEMP['Stock'] == '^GSPC')]['% Delta YTD'].iloc[0]
+    dow_perc_delta = DF_TEMP[(DF_TEMP['Days Since NY'] == max(DF_TEMP['Days Since NY'])) & (DF_TEMP['Stock'] == '^DJI')]['% Delta YTD'].iloc[0]
 
     if custom_perc_delta > max(nasdaq_perc_delta, sp500_perc_delta, dow_perc_delta):
         return f'{str.upper(ticker)} = 👍Better Than Market Average'
@@ -339,7 +345,9 @@ def custom_vs_market_graph(ticker, days_since_ny):
     df2 = DF[DF['Stock'].isin(INDICES)]
     df2['Highlight'] = 0
     data = df.append(df2)
-    latest_price = df[df['Days Since NY'] == days_since_ny]['Close'].iloc[0]
+    data = data[data['Days Since NY'] <= days_since_ny]
+    dd = df[df['Days Since NY'] <= days_since_ny]
+    latest_price = dd[dd['Days Since NY'] == max(dd['Days Since NY'])]['Close'].iloc[0]
     earliest_price = df[df['Days Since NY'] == min(df['Days Since NY'])]['Close'].iloc[0]
     fig = px.line(
         data,
