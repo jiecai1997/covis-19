@@ -103,7 +103,7 @@ DF_FEDERAL = dataframe_from_request(URL_FEDERAL_API)
 DF_FEDERAL = clean_dataframe(DF_FEDERAL, 'federal')
 
 # date variables
-LATEST_DATE = min(max(DF_STATES['date']), max(DF_FEDERAL['date']))
+LATEST_DATE = datetime(2020, 12, 31)
 EARLIEST_DATE = max(min(DF_STATES['date']), min(DF_FEDERAL['date']))
 DELTA_DAYS = (LATEST_DATE - EARLIEST_DATE).days
 

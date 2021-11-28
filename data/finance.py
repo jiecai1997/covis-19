@@ -15,7 +15,7 @@ DELTA_DAYS = (LATEST_DATE - EARLIEST_DATE).days
 DF = pd.DataFrame(columns = ['Date', 'Open', 'High', 'Low', 'Close', 'Adj Close', 'Volume', 'Stock'])
 
 for t in TICKERS.keys():
-    df = yf.download(t, start='2020-01-01').reset_index()
+    df = yf.download(t, start='2020-01-01', end='2020-12-31').reset_index()
     df['Stock'] = t
     initial = df[df['Date'] == min(df['Date'])]['Close'][0]
     df['$ Delta YTD'] = (df['Close'] - initial)

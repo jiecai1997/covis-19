@@ -177,13 +177,12 @@ def industry_graph_display(industry):
         if latest_day >= datetime.strptime('2020-02-19', '%Y-%m-%d'):
             fig.add_shape(dict(type="line", x0='2020-02-19', y0=min(data['% Delta YTD']), x1='2020-02-19', y1=max(data['% Delta YTD'])+1.5*y_diff_scale, 
                             line=dict(color='Black', width=0.1, dash="dot")))
-            fig.add_annotation(x='2020-02-19', y=max(data['% Delta YTD'])+2*y_diff_scale, text='02/19 - Market Record High')
+            fig.add_annotation(x='2020-02-19', y=max(data['% Delta YTD'])+y_diff_scale, text='02/19 - Market Record High')
 
         if latest_day >= datetime.strptime('2020-02-28', '%Y-%m-%d'):
             fig.add_shape(dict(type="line", x0='2020-02-28', y0=min(data['% Delta YTD']), x1='2020-02-28', y1=max(data['% Delta YTD'])-.5*y_diff_scale, 
                             line=dict(color='Black', width=0.1, dash="dot")))
-            fig.add_annotation(x='2020-02-28', y=max(data['% Delta YTD'])+y_diff_scale, text='02/28 - 1st US COVID-19 Death')
-            fig.add_annotation(x='2020-02-28', y=max(data['% Delta YTD']), text='02/28 - Market Correction (-10%)')
+            fig.add_annotation(x='2020-02-28', y=max(data['% Delta YTD']), text='02/28 - 1st US COVID-19 Death, Market Correction (-10%)')
 
         if latest_day >= datetime.strptime('2020-03-09', '%Y-%m-%d'):
             fig.add_shape(dict(type="line", x0='2020-03-09', y0=min(data['% Delta YTD']), x1='2020-03-09', y1=max(data['% Delta YTD'])-1.5*y_diff_scale, 
@@ -379,13 +378,12 @@ def custom_vs_market_graph(ticker, days_since_ny):
     if latest_day >= datetime.strptime('2020-02-19', '%Y-%m-%d'):
         fig.add_shape(dict(type="line", x0='2020-02-19', y0=min(data['% Delta YTD']), x1='2020-02-19', y1=max(data['% Delta YTD'])+1.5*y_diff_scale, 
                         line=dict(color='Black', width=0.1, dash="dot")))
-        fig.add_annotation(x='2020-02-19', y=max(data['% Delta YTD'])+2*y_diff_scale, text='02/19 - Market Record High')
+        fig.add_annotation(x='2020-02-19', y=max(data['% Delta YTD'])+y_diff_scale, text='02/19 - Market Record High')
 
     if latest_day >= datetime.strptime('2020-02-28', '%Y-%m-%d'):
         fig.add_shape(dict(type="line", x0='2020-02-28', y0=min(data['% Delta YTD']), x1='2020-02-28', y1=max(data['% Delta YTD'])-.5*y_diff_scale, 
                         line=dict(color='Black', width=0.1, dash="dot")))
-        fig.add_annotation(x='2020-02-28', y=max(data['% Delta YTD'])+y_diff_scale, text='02/28 - 1st US COVID-19 Death')
-        fig.add_annotation(x='2020-02-28', y=max(data['% Delta YTD']), text='02/28 - Market Correction (-10%)')
+        fig.add_annotation(x='2020-02-28', y=max(data['% Delta YTD']), text='02/28 - 1st US COVID-19 Death, Market Correction (-10%)')
 
     if latest_day >= datetime.strptime('2020-03-09', '%Y-%m-%d'):
         fig.add_shape(dict(type="line", x0='2020-03-09', y0=min(data['% Delta YTD']), x1='2020-03-09', y1=max(data['% Delta YTD'])-1.5*y_diff_scale, 

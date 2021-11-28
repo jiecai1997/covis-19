@@ -40,7 +40,7 @@ child = [
         className = 'row',
         children = [
             html.Div(
-                className = 'two columns',
+                className = 'three columns',
                 children = [
                     html.H2(html.Strong(id = 'federal-positive-info-today')),
                     html.Strong('Positive, Cumulative'),
@@ -49,11 +49,11 @@ child = [
                 ]
             ),
             html.Div(
-                className = 'two columns',
+                className = 'three columns',
                 children = dcc.Loading(dcc.Graph(id = 'federal-positive-graph', style = gh), color = '#222222', type = 'circle')
             ),
             html.Div(
-                className = 'two columns',
+                className = 'three columns',
                 children = [
                     html.H2(html.Strong(id = 'federal-deaths-info-today')),
                     html.Strong('Deaths, Cumulative'),
@@ -62,22 +62,9 @@ child = [
                 ]
             ),
             html.Div(
-                className = 'two columns',
+                className = 'three columns',
                 children = dcc.Loading(dcc.Graph(id = 'federal-deaths-graph', style = gh), color = '#222222', type = 'circle')
             ),
-            html.Div(
-                className = 'two columns',
-                children = [
-                    html.H2(html.Strong(id = 'federal-recovered-info-today')),
-                    html.Strong('Recovered, Cumulative'),
-                    html.Div(id = 'federal-recovered-info-1d'),
-                    html.Div(id = 'federal-recovered-info-1w')
-                ]
-            ),
-            html.Div(
-                className = 'two columns',
-                children = dcc.Loading(dcc.Graph(id = 'federal-recovered-graph', style = gh), color = '#222222', type = 'circle')
-            )
         ]
     ),
     html.Hr(),
@@ -274,7 +261,7 @@ def update_graph(state, metric, days_since_d1):
         if max(data['Date']) >= '2020-01-21':
             fig.add_shape(dict(type="line", x0='2020-01-21', y0=min_v, x1='2020-01-21', y1=max_v*.9, 
                     line=dict(color='Grey', width=0.1, dash="dot")))
-            fig.add_annotation(x='2020-01-21', y=math.log10(max_v), text='1/21 - 1st US COVID-19 Case')
+            fig.add_annotation(x='2020-01-21', y=math.log10(max_v*0.5), text='1/21 - 1st US COVID-19 Case')
         # first death
         if max(data['Date']) >= '2020-02-28':
             fig.add_shape(dict(type="line", x0='2020-02-28', y0=min_v, x1='2020-02-28', y1=max_v*.9, 
@@ -284,7 +271,7 @@ def update_graph(state, metric, days_since_d1):
         if max(data['Date']) >= '2020-03-13':
             fig.add_shape(dict(type="line", x0='2020-03-13', y0=min_v, x1='2020-03-13', y1=max_v*1.8, 
                     line=dict(color='Grey', width=0.1, dash="dot")))
-            fig.add_annotation(x='2020-03-13', y=math.log10(max_v*(2)), text='3/13 - State of Emergency Decleared')
+            fig.add_annotation(x='2020-03-13', y=math.log10(max_v*2), text='3/13 - State of Emergency Decleared')
         # US becomes number 1 in cases
         if max(data['Date']) >= '2020-03-26':
             fig.add_shape(dict(type="line", x0='2020-03-26', y0=min_v, x1='2020-03-26', y1=max_v*3.6, 
